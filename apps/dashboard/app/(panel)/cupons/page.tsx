@@ -46,9 +46,9 @@ export default function CouponsPage() {
   }
 
   return (
-    <main>
-      <h1 className="text-3xl font-semibold">Cupons</h1>
-      <form onSubmit={onSubmit} className="mt-6 grid max-w-xl gap-4">
+    <main className="flex flex-col gap-4">
+      <h1 className="text-[40px] font-normal leading-none">Cupons</h1>
+      <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <label>
           Código
           <Input data-testid="coupon-code-input" name="code" required />
@@ -73,11 +73,11 @@ export default function CouponsPage() {
           Entregar no cadastro
         </label>
         {error ? <p className="text-sm text-red-700">{error}</p> : null}
-        <button data-testid="coupon-submit" className="w-fit rounded-full bg-stone-900 px-4 py-2 text-sm text-white" type="submit">
+        <button data-testid="coupon-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Criar cupom
         </button>
       </form>
-      <ul className="mt-6 divide-y rounded-2xl bg-white ring-1 ring-stone-200">
+      <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item) => (
           <li key={item.id} className="px-4 py-3">
             {item.code} · {item.name}
