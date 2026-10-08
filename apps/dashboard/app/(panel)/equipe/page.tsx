@@ -2,7 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 
-import { Input } from "@vitrio/ui";
+import { Input, Notice } from "@vitrio/ui";
+import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
 
 type Member = { id: string; name: string; email: string; role: string; is_active: boolean };
@@ -10,10 +11,19 @@ type Member = { id: string; name: string; email: string; role: string; is_active
 export default function TeamPage() {
   const [items, setItems] = useState<Member[]>([]);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   async function load() {
+    setLoading(true);
+    setLoadError("");
     const response = await api("/users");
-    if (response.ok) setItems(await response.json());
+    setLoading(false);
+    if (!response.ok) {
+      setLoadError(await readError(response));
+      return;
+    }
+    setItems(await response.json());
   }
 
   useEffect(() => {
@@ -41,6 +51,7 @@ export default function TeamPage() {
   return (
     <main className="flex flex-col gap-4">
       <h1 className="text-[40px] font-normal leading-none">Equipe</h1>
+      <p className="text-base text-[var(--muted)]">Quem acessa o painel e com qual papel.</p>
       <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <Input data-testid="user-name" name="name" placeholder="Nome" required minLength={2} />
         <Input data-testid="user-email" name="email" type="email" placeholder="E-mail" required />
@@ -55,7 +66,8 @@ export default function TeamPage() {
           Convidar
         </button>
       </form>
-      {message ? <p className="text-sm">{message}</p> : null}
+      {message ? <Notice tone={message.startsWith("Pessoa") ? "success" : "error"} title={message} /> : null}
+      <PanelFeedback loading={loading} error={loadError} onRetry={load} empty={!loading && items.length === 0} emptyTitle="Nenhuma pessoa na equipe" emptyText="Convide quem vai cuidar da loja." />
       <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item) => (
           <li key={item.id} className="flex items-center justify-between px-4 py-3 text-sm">
