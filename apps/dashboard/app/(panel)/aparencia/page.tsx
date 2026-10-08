@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 
+import { Notice } from "@vitrio/ui";
 import { api, readError } from "@/lib/api";
 
 const labels: Record<string, string> = {
@@ -19,11 +20,18 @@ export default function AppearancePage() {
   const [heroText, setHeroText] = useState("");
   const [order, setOrder] = useState<string[]>([]);
   const [message, setMessage] = useState("");
+  const [messageOk, setMessageOk] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [themes, setThemes] = useState<{ id: string; name: string; fonts: string }[]>([]);
 
   useEffect(() => {
     api("/appearance").then(async (response) => {
-      if (!response.ok) return;
+      setLoading(false);
+      if (!response.ok) {
+        setMessageOk(false);
+        setMessage(await readError(response));
+        return;
+      }
       const data = await response.json();
       setFontPair(data.font_pair);
       setHeroText(data.hero_text ?? "");
@@ -37,9 +45,11 @@ export default function AppearancePage() {
   async function applyTheme(id: string) {
     const response = await api(`/themes/${id}/apply`, { method: "POST" });
     if (!response.ok) {
+      setMessageOk(false);
       setMessage(await readError(response));
       return;
     }
+    setMessageOk(true);
     const data = await response.json();
     setFontPair(data.font_pair);
     setOrder(data.section_order);
@@ -64,12 +74,15 @@ export default function AppearancePage() {
       method: "PATCH",
       body: JSON.stringify({ font_pair: fontPair, hero_text: heroText, section_order: order }),
     });
+    setMessageOk(response.ok);
     setMessage(response.ok ? "Aparência salva." : await readError(response));
   }
 
   return (
     <main className="flex flex-col gap-4">
       <h1 className="text-[40px] font-normal leading-none">Aparência</h1>
+      <p className="text-base text-[var(--muted)]">Tema, texto do hero e a ordem das seções da home.</p>
+      {loading ? <Notice tone="loading" title="Carregando" text="Buscando a aparência da loja." /> : null}
       <div className="grid gap-3 sm:grid-cols-2">
         {themes.map((theme) => (
           <button
@@ -116,11 +129,10 @@ export default function AppearancePage() {
             </li>
           ))}
         </ol>
-        {message ? (
-          <p className="text-sm" data-testid="appearance-saved">
-            {message}
-          </p>
-        ) : null}
+        {message ? <Notice tone={messageOk ? "success" : "error"} title={message} /> : null}
+        <p className="sr-only" data-testid="appearance-saved">
+          {message}
+        </p>
         <button data-testid="appearance-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Salvar aparência
         </button>
