@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 type Item = { ok: boolean; label: string; entity: string };
 
@@ -13,16 +14,12 @@ export default function SeoPage() {
   const [loadError, setLoadError] = useState("");
 
   async function load() {
-    setLoading(true);
-    setLoadError("");
-    const response = await api("/seo/audit");
-    setLoading(false);
-    if (!response.ok) {
-      setLoadError(await readError(response));
-      return;
-    }
-    const body = await response.json();
-    setItems(body.items);
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const response = await api("/seo/audit");
+      if (!response.ok) throw new Error(await readError(response));
+      const body = await response.json();
+      setItems(body.items ?? []);
+    });
   }
 
   useEffect(() => {
