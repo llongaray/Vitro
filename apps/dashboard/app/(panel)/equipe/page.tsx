@@ -5,6 +5,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Input, Notice } from "@vitrio/ui";
 import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 type Member = { id: string; name: string; email: string; role: string; is_active: boolean };
 
@@ -15,19 +16,15 @@ export default function TeamPage() {
   const [loadError, setLoadError] = useState("");
 
   async function load() {
-    setLoading(true);
-    setLoadError("");
-    const response = await api("/users");
-    setLoading(false);
-    if (!response.ok) {
-      setLoadError(await readError(response));
-      return;
-    }
-    setItems(await response.json());
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const response = await api("/users");
+      if (!response.ok) throw new Error(await readError(response));
+      setItems(await response.json());
+    });
   }
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
