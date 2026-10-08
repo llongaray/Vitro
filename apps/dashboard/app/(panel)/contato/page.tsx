@@ -1,11 +1,11 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Input } from "@vitrio/ui";
+import { Input, Notice } from "@vitrio/ui";
 import { api, readError } from "@/lib/api";
 
 const schema = z.object({
@@ -17,6 +17,9 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function ContactPage() {
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [saved, setSaved] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { contact_type: "whatsapp", contact_value: "", contact_message_template: "" },
@@ -24,7 +27,11 @@ export default function ContactPage() {
 
   useEffect(() => {
     api("/contacts").then(async (response) => {
-      if (!response.ok) return;
+      setLoading(false);
+      if (!response.ok) {
+        setLoadError(await readError(response));
+        return;
+      }
       const data = await response.json();
       form.reset({
         contact_type: data.contact_type,
@@ -36,13 +43,20 @@ export default function ContactPage() {
 
   async function onSubmit(values: FormValues) {
     const response = await api("/contacts", { method: "PATCH", body: JSON.stringify(values) });
-    if (!response.ok) form.setError("root", { message: await readError(response) });
+    if (!response.ok) {
+      setSaved(false);
+      form.setError("root", { message: await readError(response) });
+      return;
+    }
+    setSaved(true);
   }
 
   return (
     <main className="flex flex-col gap-4">
       <h1 className="text-[40px] font-normal leading-none">Contato</h1>
-      <p className="mt-2 max-w-xl text-stone-600">O botão Tenho interesse usa este canal. Use {"{product_name}"} e {"{product_url}"} na mensagem.</p>
+      <p className="text-base text-[var(--muted)]">O botão Tenho interesse usa este canal. Use {"{product_name}"} e {"{product_url}"} na mensagem.</p>
+      {loading ? <Notice tone="loading" title="Carregando" text="Buscando o contato da loja." /> : null}
+      {loadError ? <Notice tone="error" title="Não foi possível carregar" text={loadError} /> : null}
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <label>
           Canal
@@ -62,7 +76,8 @@ export default function ContactPage() {
           Mensagem
           <textarea className="min-h-28 rounded-xl border border-stone-300 px-3 py-2 text-sm" {...form.register("contact_message_template")} />
         </label>
-        {form.formState.errors.root ? <p className="text-sm text-red-700">{form.formState.errors.root.message}</p> : null}
+        {form.formState.errors.root ? <p className="text-sm text-red-700" role="alert">{form.formState.errors.root.message}</p> : null}
+        {saved ? <Notice tone="success" title="Contato salvo" /> : null}
         <button className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Salvar contato
         </button>
