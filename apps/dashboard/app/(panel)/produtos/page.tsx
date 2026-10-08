@@ -22,12 +22,12 @@ export default function ProductsPage() {
   return (
     <main>
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-semibold">Produtos</h1>
-        <Link data-testid="new-product" href="/produtos/novo" className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white">
+        <h1 className="text-[40px] font-normal leading-none">Produtos</h1>
+        <Link data-testid="new-product" href="/produtos/novo" className="inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]">
           Novo produto
         </Link>
       </div>
-      <ul className="mt-6 divide-y divide-stone-200 rounded-2xl bg-white ring-1 ring-stone-200">
+      <ul className="mt-6 divide-y divide-[var(--bg)] rounded-2xl bg-[var(--surface)]">
         {items.map((item) => (
           <li key={item.id} className="flex items-center justify-between px-4 py-3">
             <Link href={`/produtos/${item.id}`}>{item.name}</Link>
