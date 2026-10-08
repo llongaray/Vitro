@@ -9,7 +9,23 @@ import { z } from "zod";
 import { Button, Input, Notice } from "@vitrio/ui";
 import { SeoPreview } from "@/components/seo-preview";
 import { api, readError } from "@/lib/api";
-import { claimSubmit, publishFlag, releaseSubmit } from "@/lib/panel-guards";
+import { canMutateProduct, claimSubmit, isCurrentRequest, publishFlag, releaseSubmit } from "@/lib/panel-guards";
+
+const emptyProduct: FormValues = {
+  name: "",
+  slug: "",
+  short_description: "",
+  description: "",
+  price: "",
+  stock_display: "",
+  show_price: "inherit",
+  category_id: "",
+  publish: true,
+  is_clearance: false,
+  clearance_label: "",
+  seo_title: "",
+  seo_description: "",
+};
 
 const schema = z.object({
   name: z.string().min(1, "Informe o nome"),
@@ -36,50 +52,113 @@ export function ProductForm({ productId }: { productId?: string }) {
   const [images, setImages] = useState<{ id: string; url: string | null; alt: string | null }[]>([]);
   const [saved, setSaved] = useState<"draft" | "published" | null>(null);
   const [sending, setSending] = useState(false);
+  const [productReady, setProductReady] = useState(!productId);
+  const [productLoading, setProductLoading] = useState(Boolean(productId));
+  const [productError, setProductError] = useState("");
+  const [categoryError, setCategoryError] = useState("");
   const submitLock = useRef({ busy: false });
+  const productGen = useRef(0);
+  const categoryGen = useRef(0);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", slug: "", short_description: "", description: "", price: "", stock_display: "", show_price: "inherit", category_id: "", publish: true, is_clearance: false, clearance_label: "", seo_title: "", seo_description: "" },
+    defaultValues: emptyProduct,
   });
 
+  async function loadCategories(generation: number) {
+    setCategoryError("");
+    try {
+      const response = await api("/categories");
+      if (!isCurrentRequest(generation, categoryGen.current)) return;
+      if (!response.ok) {
+        setCategoryError(await readError(response));
+        return;
+      }
+      setCategories(await response.json());
+      setCategoryError("");
+    } catch {
+      if (!isCurrentRequest(generation, categoryGen.current)) return;
+      setCategoryError("A conexão falhou. Tente de novo.");
+    }
+  }
+
+  async function loadProduct(generation: number) {
+    if (!productId) {
+      if (!isCurrentRequest(generation, productGen.current)) return;
+      setProductReady(true);
+      setProductLoading(false);
+      setProductError("");
+      return;
+    }
+    setProductReady(false);
+    setProductLoading(true);
+    setProductError("");
+    try {
+      const response = await api(`/products/${productId}`);
+      if (!isCurrentRequest(generation, productGen.current)) return;
+      if (!response.ok) {
+        setProductError(await readError(response));
+        return;
+      }
+      const product = await response.json();
+      if (!isCurrentRequest(generation, productGen.current)) return;
+      form.reset({
+        name: product.name,
+        slug: product.slug ?? "",
+        short_description: product.short_description ?? "",
+        description: product.description ?? "",
+        price: product.price ?? "",
+        stock_display: product.stock_display ?? "",
+        show_price: product.show_price,
+        category_id: product.category_id ?? "",
+        publish: product.published,
+        is_clearance: product.is_clearance,
+        clearance_label: product.clearance_label ?? "",
+        seo_title: product.seo_title ?? "",
+        seo_description: product.seo_description ?? "",
+      });
+      setImages(product.images ?? []);
+      setProductReady(true);
+    } catch {
+      if (!isCurrentRequest(generation, productGen.current)) return;
+      setProductError("A conexão falhou. Tente de novo.");
+    } finally {
+      if (isCurrentRequest(generation, productGen.current)) setProductLoading(false);
+    }
+  }
+
   useEffect(() => {
-    let active = true;
-    api("/categories")
-      .then(async (response) => {
-        if (active && response.ok) setCategories(await response.json());
-      })
-      .catch(() => undefined);
-    if (!productId) return () => {
-      active = false;
-    };
-    api(`/products/${productId}`)
-      .then(async (response) => {
-        if (!active || !response.ok) return;
-        const product = await response.json();
-        form.reset({
-          name: product.name,
-          slug: product.slug ?? "",
-          short_description: product.short_description ?? "",
-          description: product.description ?? "",
-          price: product.price ?? "",
-          stock_display: product.stock_display ?? "",
-          show_price: product.show_price,
-          category_id: product.category_id ?? "",
-          publish: product.published,
-          is_clearance: product.is_clearance,
-          clearance_label: product.clearance_label ?? "",
-          seo_title: product.seo_title ?? "",
-          seo_description: product.seo_description ?? "",
-        });
-        setImages(product.images ?? []);
-      })
-      .catch(() => undefined);
+    const productToken = ++productGen.current;
+    const categoryToken = ++categoryGen.current;
+    setProductReady(!productId);
+    setProductLoading(Boolean(productId));
+    setProductError("");
+    setSaved(null);
+    setImages([]);
+    if (productId) form.reset(emptyProduct);
+    void loadCategories(categoryToken);
+    void loadProduct(productToken);
     return () => {
-      active = false;
+      productGen.current += 1;
+      categoryGen.current += 1;
     };
-  }, [productId, form]);
+    // O formulário do react-hook-form é estável; productId é o que troca o produto aberto.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
+
+  function retryProduct() {
+    const generation = ++productGen.current;
+    void loadProduct(generation);
+  }
+
+  function retryCategories() {
+    const generation = ++categoryGen.current;
+    void loadCategories(generation);
+  }
+
+  const editable = canMutateProduct(productId, productReady);
 
   async function onSubmit(values: FormValues) {
+    if (!canMutateProduct(productId, productReady)) return;
     const payload = {
       name: values.name,
       short_description: values.short_description || null,
@@ -111,6 +190,7 @@ export function ProductForm({ productId }: { productId?: string }) {
   }
 
   async function guarded(task: () => Promise<void>) {
+    if (!canMutateProduct(productId, productReady)) return;
     if (!claimSubmit(submitLock.current)) return;
     setSending(true);
     try {
@@ -134,7 +214,7 @@ export function ProductForm({ productId }: { productId?: string }) {
   }
 
   async function upload(file: File) {
-    if (!productId) return;
+    if (!productId || !canMutateProduct(productId, productReady)) return;
     const body = new FormData();
     body.set("file", file);
     const response = await api(`/products/${productId}/images`, { method: "POST", body });
@@ -159,9 +239,34 @@ export function ProductForm({ productId }: { productId?: string }) {
         });
       }}
       className="flex flex-col gap-4"
-      aria-busy={sending}
+      aria-busy={sending || productLoading}
     >
-      <section className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
+      {productLoading ? <Notice tone="loading" title="Carregando" text="Buscando o produto." /> : null}
+      {productError ? (
+        <Notice
+          tone="error"
+          title="Não foi possível carregar o produto"
+          text={productError}
+          action={
+            <button type="button" data-testid="product-load-retry" className="inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" onClick={retryProduct}>
+              Tentar de novo
+            </button>
+          }
+        />
+      ) : null}
+      {categoryError ? (
+        <Notice
+          tone="error"
+          title="Não foi possível carregar as categorias"
+          text={categoryError}
+          action={
+            <button type="button" data-testid="category-load-retry" className="inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" onClick={retryCategories}>
+              Tentar de novo
+            </button>
+          }
+        />
+      ) : null}
+      <fieldset disabled={!editable || sending} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <h2 className="text-[22px]">Dados do produto</h2>
           <label>
             Nome do produto *
@@ -232,7 +337,7 @@ export function ProductForm({ productId }: { productId?: string }) {
               className="sr-only"
               type="file"
               accept="image/png,image/jpeg,image/webp,image/gif"
-              disabled={!productId}
+              disabled={!productId || !editable}
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) upload(file);
@@ -254,7 +359,7 @@ export function ProductForm({ productId }: { productId?: string }) {
               ? "Salvar publica o produto no catálogo."
               : "Com esta opção desmarcada, salvar mantém o produto como rascunho."}
           </p>
-        </section>
+      </fieldset>
       {form.formState.errors.root ? <p className="text-sm text-red-700" role="alert">{form.formState.errors.root.message}</p> : null}
       {saved ? (
         <Notice
@@ -264,10 +369,10 @@ export function ProductForm({ productId }: { productId?: string }) {
         />
       ) : null}
       <div className="flex flex-wrap gap-4">
-        <Button type="button" tone="secondary" className="w-[190px]" onClick={saveDraft} disabled={sending}>
+        <Button type="button" tone="secondary" className="w-[190px]" onClick={saveDraft} disabled={!editable || sending}>
           {sending ? "Salvando..." : "Salvar rascunho"}
         </Button>
-        <Button data-testid="product-submit" type="submit" className="w-[190px]" disabled={sending}>
+        <Button data-testid="product-submit" type="submit" className="w-[190px]" disabled={!editable || sending}>
           {sending ? "Salvando..." : published ? "Publicar produto" : "Salvar sem publicar"}
         </Button>
       </div>
