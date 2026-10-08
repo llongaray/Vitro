@@ -68,8 +68,8 @@ export default function AppearancePage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6">
-      <h1 className="font-serif text-4xl">Aparência</h1>
+    <main className="flex flex-col gap-4">
+      <h1 className="text-[40px] font-normal leading-none">Aparência</h1>
       <div className="grid gap-3 sm:grid-cols-2">
         {themes.map((theme) => (
           <button
@@ -84,7 +84,7 @@ export default function AppearancePage() {
           </button>
         ))}
       </div>
-      <form onSubmit={save} className="space-y-6">
+      <form onSubmit={save} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <label className="block text-sm">
           Par de fontes
           <select className="mt-1 w-full rounded-xl border border-stone-300 px-3 py-2" value={fontPair} onChange={(event) => setFontPair(event.target.value)}>
@@ -121,7 +121,7 @@ export default function AppearancePage() {
             {message}
           </p>
         ) : null}
-        <button data-testid="appearance-submit" className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white" type="submit">
+        <button data-testid="appearance-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Salvar aparência
         </button>
       </form>
