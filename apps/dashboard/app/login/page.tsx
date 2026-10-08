@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Button, Input } from "@vitrio/ui";
+import { Input } from "@vitrio/ui";
 import { readError, setAccessToken } from "@/lib/api";
 
 const schema = z.object({
@@ -37,9 +37,8 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-8">
-      <p className="text-2xl text-[var(--brand)]">Vitrio</p>
-      <h1 className="text-[40px] font-normal leading-none">Entrar na loja</h1>
+      <h1 className="text-3xl font-semibold">Entrar na loja</h1>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 grid gap-4">
         <label>
           E-mail
           <Input data-testid="login-email" type="email" {...form.register("email")} />
@@ -50,9 +49,9 @@ export default function LoginPage() {
         </label>
         {form.formState.errors.root ? <p className="text-sm text-red-700">{form.formState.errors.root.message}</p> : null}
         {form.formState.errors.email ? <p className="text-sm text-red-700">{form.formState.errors.email.message}</p> : null}
-        <Button data-testid="login-submit" type="submit">
+        <button data-testid="login-submit" className="rounded-full bg-stone-900 px-4 py-2 text-stone-50" type="submit">
           Entrar
-        </Button>
+        </button>
       </form>
     </main>
   );

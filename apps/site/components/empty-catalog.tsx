@@ -1,12 +1,12 @@
 import Link from "next/link";
 
-export function EmptyCatalog({ title, text, action = "Ver catálogo" }: { title: string; text: string; action?: string }) {
+export function EmptyCatalog({ title, text }: { title: string; text: string }) {
   return (
-    <div className="rounded-2xl bg-[var(--surface)] px-8 py-14 text-center">
+    <div className="mt-8 rounded-[1.5rem] bg-white px-8 py-14 text-center ring-1 ring-stone-200/80">
       <p className="font-serif text-3xl">{title}</p>
-      <p className="mx-auto mt-3 max-w-md text-[var(--muted)]">{text}</p>
-      <Link href="/produtos" className="mt-6 inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]">
-        {action}
+      <p className="mx-auto mt-3 max-w-md text-stone-600">{text}</p>
+      <Link href="/produtos" className="mt-6 inline-flex rounded-full px-5 py-3 text-sm font-medium text-white" style={{ background: "var(--store)" }}>
+        Ver produtos
       </Link>
     </div>
   );

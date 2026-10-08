@@ -37,27 +37,41 @@ export default async function HomePage() {
     ? site.tenant.section_order
     : ["hero", "banners", "categories", "featured", "promotions", "clearance", "about"];
   const heroText = site.tenant.hero_text || site.tenant.description;
-  const banner = site.banners.find((item) => item.desktop_url || item.mobile_url);
-  const featuredImage = site.featured_products.find((product) => product.image?.url)?.image;
-  const heroImage = banner ? { url: banner.desktop_url || banner.mobile_url, alt: banner.title } : featuredImage;
+  const heroImage = site.featured_products.find((product) => product.image?.url)?.image;
   const blocks: Record<string, ReactNode> = {
     hero: (
-      <section data-testid="home-hero" key="hero" className="grid items-start gap-4 rounded-2xl bg-[var(--soft)] p-6 md:grid-cols-[minmax(0,550px)_1fr] md:p-10">
-        <div className="flex flex-col gap-4">
-          <p className="text-xs text-[var(--brand)]">{(site.tenant.city || "Vitrine").toUpperCase()}</p>
-          <h1 className="font-serif text-5xl leading-none text-[var(--ink)] md:text-[64px]">{site.tenant.trade_name}</h1>
-          {heroText ? <p className="max-w-[490px] text-lg text-[var(--muted)]">{heroText}</p> : null}
-          <Link href="/produtos" className="inline-flex min-h-11 w-fit items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]">
-            Explorar catálogo
-          </Link>
+      <section data-testid="home-hero" key="hero" className="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-stone-200/80">
+        <div className="grid items-center gap-8 p-6 md:grid-cols-[1.05fr_0.95fr] md:p-10 lg:gap-12 lg:p-14">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.22em] text-stone-500">{site.tenant.city || "Vitrine"}</p>
+            <h1 className="mt-4 font-serif text-5xl leading-[0.95] text-stone-950 md:text-6xl">{site.tenant.trade_name}</h1>
+            {heroText ? <p className="mt-5 max-w-md text-lg leading-relaxed text-stone-600">{heroText}</p> : null}
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link href="/produtos" className="rounded-full px-5 py-3 text-sm font-medium text-white" style={{ background: "var(--store)" }}>
+                Ver produtos
+              </Link>
+              {about ? (
+                <Link href={`/pagina/${about.slug}`} className="rounded-full bg-stone-100 px-5 py-3 text-sm font-medium text-stone-800">
+                  Conheça a loja
+                </Link>
+              ) : (
+                <ContactLink contact={site.tenant.contact} message="Olá! Vim pelo site e gostaria de mais informações." />
+              )}
+            </div>
+          </div>
+          <div className="relative">
+            {heroImage?.url ? (
+              <img src={heroImage.url} alt={heroImage.alt || site.tenant.trade_name} className="aspect-[5/4] w-full rounded-[1.5rem] bg-stone-50 object-contain p-6" />
+            ) : (
+              <div className="aspect-[5/4] rounded-[1.5rem] bg-stone-100" />
+            )}
+          </div>
         </div>
-        <div className="flex h-[220px] items-center justify-center overflow-hidden rounded-2xl bg-[var(--image)] md:h-[350px]">
-          {heroImage?.url ? (
-            <img src={heroImage.url} alt={heroImage.alt || site.tenant.trade_name} className="h-full w-full object-contain" />
-          ) : (
-            <p className="px-5 text-sm text-[var(--muted)]">Banner da coleção</p>
-          )}
-        </div>
+        <ul className="grid gap-4 border-t border-stone-100 px-6 py-5 text-sm text-stone-600 sm:grid-cols-3 md:px-10">
+          <li>Atendimento direto com a loja</li>
+          <li>Peças selecionadas</li>
+          <li>{[site.tenant.city, site.tenant.state].filter(Boolean).join(" · ") || site.tenant.business_hours}</li>
+        </ul>
       </section>
     ),
     banners: (
@@ -66,33 +80,60 @@ export default async function HomePage() {
       </section>
     ),
     categories: (
-      <section data-testid="home-categories" key="categories" className="flex flex-col gap-4">
-        <h2 className="font-serif text-4xl text-[var(--ink)]">Feito para o seu dia a dia</h2>
-        <p className="text-[15px] text-[var(--muted)]">
-          <Link href="/produtos">Categorias</Link>
+      <section data-testid="home-categories" key="categories">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-stone-500">Explore</p>
+            <h2 className="mt-2 font-serif text-4xl">Categorias</h2>
+          </div>
+          <Link href="/produtos" className="text-sm underline">
+            Ver todas
+          </Link>
+        </div>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {site.categories.map((category) => (
-            <span key={category.slug}>
-              {" · "}
-              <Link href={`/categorias/${category.slug}`}>{category.name}</Link>
-            </span>
+            <Link key={category.slug} href={`/categorias/${category.slug}`} className="group overflow-hidden rounded-[1.5rem] bg-white shadow-sm ring-1 ring-stone-200/80">
+              <div className="aspect-[16/10] bg-stone-50">
+                {category.image_url ? (
+                  <img src={category.image_url} alt="" className="h-full w-full object-contain p-6 transition duration-300 group-hover:scale-105" />
+                ) : (
+                  <div className="grid h-full place-items-center font-serif text-4xl text-stone-300">{category.name.slice(0, 1)}</div>
+                )}
+              </div>
+              <div className="px-5 py-4">
+                <p className="font-serif text-2xl">{category.name}</p>
+                {category.description ? <p className="mt-1 text-sm text-stone-500">{category.description}</p> : null}
+              </div>
+            </Link>
           ))}
-        </p>
+        </div>
       </section>
     ),
     featured: (
-      <div key="featured" className="flex flex-col gap-4">
-        <section data-testid="home-featured" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {site.featured_products.map((product) => (
-            <ProductCardView key={product.slug} product={product} currency={site.tenant.currency} />
-          ))}
+      <div key="featured" className="space-y-12">
+        <section data-testid="home-featured">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-stone-500">Seleção</p>
+            <h2 className="mt-2 font-serif text-4xl">Destaques</h2>
+          </div>
+            <Link href="/produtos" className="text-sm underline">
+              Ver catálogo
+            </Link>
+          </div>
+          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {site.featured_products.map((product) => (
+              <ProductCardView key={product.slug} product={product} currency={site.tenant.currency} />
+            ))}
+          </div>
         </section>
         <AdSlots ads={site.ads} position="HOME_MIDDLE" />
       </div>
     ),
     promotions: site.promotions.length ? (
-      <section data-testid="home-promotions" key="promotions" className="flex flex-col gap-4">
+      <section data-testid="home-promotions" key="promotions">
         <h2 className="font-serif text-4xl">Promoções</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {site.promotions.map((product) => (
             <ProductCardView key={product.slug} product={product} currency={site.tenant.currency} />
           ))}
@@ -102,9 +143,9 @@ export default async function HomePage() {
       <section data-testid="home-promotions" key="promotions" className="hidden" />
     ),
     clearance: site.clearance.length ? (
-      <section data-testid="home-clearance" key="clearance" className="flex flex-col gap-4">
+      <section data-testid="home-clearance" key="clearance">
         <h2 className="font-serif text-4xl">Liquidação</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {site.clearance.map((product) => (
             <ProductCardView key={product.slug} product={product} currency={site.tenant.currency} />
           ))}
@@ -113,23 +154,23 @@ export default async function HomePage() {
     ) : (
       <section data-testid="home-clearance" key="clearance" className="hidden" />
     ),
-    about: (
-      <section data-testid="home-about" key="about" className="flex flex-col gap-4 rounded-2xl bg-[var(--brand)] p-7 text-[var(--surface)]">
-        <h2 className="font-serif text-[28px]">Encontrou algo especial?</h2>
-        <p className="text-base">{site.tenant.description || "Converse com nossa equipe para saber mais."}</p>
-        <div className="flex flex-wrap gap-4">
-          {about ? (
-            <Link href={`/pagina/${about.slug}`} className="inline-flex min-h-11 items-center rounded-[10px] bg-[var(--soft)] px-3.5 text-[15px] text-[var(--brand)]">
-              Sobre nós
-            </Link>
-          ) : null}
-          <ContactLink contact={site.tenant.contact} message="Olá! Vim pelo site e gostaria de mais informações." tone="soft" />
+    about: about ? (
+      <section data-testid="home-about" key="about" className="grid gap-6 rounded-[2rem] bg-white p-8 ring-1 ring-stone-200/80 md:grid-cols-[1fr_auto] md:items-center md:p-10">
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-stone-500">A loja</p>
+          <h2 className="mt-2 font-serif text-4xl">Sobre</h2>
+          <p className="mt-3 max-w-xl text-stone-600">{site.tenant.description}</p>
         </div>
+        <Link href={`/pagina/${about.slug}`} className="rounded-full bg-stone-900 px-5 py-3 text-center text-sm text-white">
+          Conheça a loja
+        </Link>
       </section>
+    ) : (
+      <section data-testid="home-about" key="about" className="hidden" />
     ),
   };
   return (
-    <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-5 py-8 md:px-16 md:py-16">
+    <main className="mx-auto max-w-6xl space-y-16 px-6 py-8 md:py-12">
       <JsonLd data={structured} />
       <AdSlots ads={site.ads} position="HOME_TOP" />
       {order.map((id) => blocks[id] ?? null)}

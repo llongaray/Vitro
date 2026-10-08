@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { BadgePercent, Boxes, FileText, ImageIcon, LayoutDashboard, LogOut, Megaphone, MessageCircle, Package, Palette, Plug, ScrollText, Search, Settings, Shapes, Ticket, Upload, UserCog, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
@@ -11,56 +12,33 @@ const ALL = ["OWNER", "ADMIN", "EDITOR", "VIEWER"];
 const STORE = ["OWNER", "ADMIN"];
 const CATALOG = ["OWNER", "ADMIN", "EDITOR"];
 
-const primary = [
-  { href: "/", label: "Visão geral", testid: "nav-home", roles: ALL },
-  { href: "/produtos", label: "Produtos", testid: "nav-produtos", roles: ALL },
-  { href: "/categorias", label: "Categorias", testid: "nav-categorias", roles: ALL },
-  { href: "/banners", label: "Banners", testid: "nav-banners", roles: CATALOG },
-  { href: "/paginas", label: "Páginas", testid: "nav-paginas", roles: CATALOG },
-  { href: "/aparencia", label: "Aparência", testid: "nav-aparencia", roles: STORE },
-  { href: "/configuracoes", label: "Configurações", testid: "nav-configuracoes", roles: STORE },
+const links = [
+  { href: "/", label: "Início", icon: LayoutDashboard, testid: "nav-home", roles: ALL },
+  { href: "/produtos", label: "Produtos", icon: Package, testid: "nav-produtos", roles: ALL },
+  { href: "/categorias", label: "Categorias", icon: Shapes, testid: "nav-categorias", roles: ALL },
+  { href: "/promocoes", label: "Promoções", icon: BadgePercent, testid: "nav-promocoes", roles: CATALOG },
+  { href: "/liquidacao", label: "Liquidação", icon: BadgePercent, testid: "nav-liquidacao", roles: CATALOG },
+  { href: "/cupons", label: "Cupons", icon: Ticket, testid: "nav-cupons", roles: STORE },
+  { href: "/clientes", label: "Clientes", icon: Users, testid: "nav-clientes", roles: ALL },
+  { href: "/banners", label: "Banners", icon: ImageIcon, testid: "nav-banners", roles: CATALOG },
+  { href: "/paginas", label: "Páginas", icon: FileText, testid: "nav-paginas", roles: CATALOG },
+  { href: "/anuncios", label: "Anúncios", icon: Megaphone, testid: "nav-anuncios", roles: STORE },
+  { href: "/aparencia", label: "Aparência", icon: Palette, testid: "nav-aparencia", roles: STORE },
+  { href: "/importar", label: "Importar", icon: Upload, testid: "nav-importar", roles: STORE },
+  { href: "/integracoes", label: "Integrações", icon: Plug, testid: "nav-integracoes", roles: STORE },
+  { href: "/modulos", label: "Módulos", icon: Boxes, testid: "nav-modulos", roles: STORE },
+  { href: "/contato", label: "Contato", icon: MessageCircle, testid: "nav-contato", roles: STORE },
+  { href: "/seo", label: "SEO", icon: Search, testid: "nav-seo", roles: STORE },
+  { href: "/auditoria", label: "Auditoria", icon: ScrollText, testid: "nav-auditoria", roles: STORE },
+  { href: "/equipe", label: "Equipe", icon: UserCog, testid: "nav-equipe", roles: ["OWNER"] },
+  { href: "/configuracoes", label: "Configurações", icon: Settings, testid: "nav-configuracoes", roles: STORE },
 ];
-
-const more = [
-  { href: "/promocoes", label: "Promoções", testid: "nav-promocoes", roles: CATALOG },
-  { href: "/liquidacao", label: "Liquidação", testid: "nav-liquidacao", roles: CATALOG },
-  { href: "/cupons", label: "Cupons", testid: "nav-cupons", roles: STORE },
-  { href: "/clientes", label: "Clientes", testid: "nav-clientes", roles: ALL },
-  { href: "/anuncios", label: "Anúncios", testid: "nav-anuncios", roles: STORE },
-  { href: "/importar", label: "Importar", testid: "nav-importar", roles: STORE },
-  { href: "/integracoes", label: "Integrações", testid: "nav-integracoes", roles: STORE },
-  { href: "/modulos", label: "Módulos", testid: "nav-modulos", roles: STORE },
-  { href: "/contato", label: "Contato", testid: "nav-contato", roles: STORE },
-  { href: "/seo", label: "SEO", testid: "nav-seo", roles: STORE },
-  { href: "/auditoria", label: "Auditoria", testid: "nav-auditoria", roles: STORE },
-  { href: "/equipe", label: "Equipe", testid: "nav-equipe", roles: ["OWNER"] },
-];
-
-const titles: Record<string, string> = {
-  "/": "Visão geral",
-  "/produtos": "Produtos",
-  "/categorias": "Categorias",
-  "/banners": "Banners",
-  "/paginas": "Páginas",
-  "/aparencia": "Aparência",
-  "/configuracoes": "Configurações",
-};
-
-function currentTitle(pathname: string) {
-  if (titles[pathname]) return titles[pathname];
-  const match = Object.keys(titles)
-    .filter((href) => href !== "/" && pathname.startsWith(href))
-    .sort((a, b) => b.length - a.length)[0];
-  return match ? titles[match] : "Painel";
-}
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [role, setRole] = useState("VIEWER");
-  const [storeName, setStoreName] = useState("Loja");
-  const [accountName, setAccountName] = useState("Minha conta");
 
   useEffect(() => {
     let active = true;
@@ -77,13 +55,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
       if (me.ok) {
         const profile = await me.json();
         setRole(profile.role);
-        if (profile.name) setAccountName(profile.name);
-      }
-      const settings = await api("/settings");
-      if (settings.ok) {
-        const store = await settings.json();
-        if (store.trade_name) setStoreName(store.trade_name);
-        if (store.primary_color) document.documentElement.style.setProperty("--brand", store.primary_color);
       }
       setReady(true);
     });
@@ -97,51 +68,37 @@ export function Shell({ children }: { children: React.ReactNode }) {
     router.replace("/login");
   }
 
-  if (!ready) return <p className="p-8 text-sm text-[var(--muted)]">Abrindo o painel...</p>;
-
-  function itemActive(href: string) {
-    return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
-  }
-
-  function NavGroup({ items, label }: { items: typeof primary; label: string }) {
-    const visible = items.filter((link) => link.roles.includes(role));
-    if (!visible.length) return null;
-    return (
-      <div className="flex flex-col gap-4">
-        <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">{label}</p>
-        {visible.map((link) => (
-          <Link key={link.href} href={link.href} data-testid={link.testid} className={`text-base ${itemActive(link.href) ? "text-[var(--brand)]" : "text-[var(--ink)]"}`}>
-            {link.label}
-          </Link>
-        ))}
-      </div>
-    );
-  }
+  if (!ready) return <p className="p-8 text-sm text-stone-500">Abrindo o painel...</p>;
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] p-4 md:p-8">
-      <header className="flex flex-wrap items-center gap-4 rounded-2xl bg-[var(--surface)] px-8 py-8">
-        <p className="text-2xl text-[var(--brand)]">Vitrio</p>
-        <p className="text-sm text-[var(--muted)]">
-          {storeName}
-          {" / "}
-          {currentTitle(pathname)}
-        </p>
-        <div className="ml-auto flex items-center gap-4 text-sm text-[var(--muted)]">
-          <NotificationBell />
-          <span>{accountName}</span>
-          <button type="button" onClick={logout} className="text-sm text-[var(--muted)]">
-            Sair
-          </button>
+    <div className="min-h-screen md:grid md:grid-cols-[240px_1fr]">
+      <aside className="border-b border-stone-200 bg-stone-900 text-stone-100 md:min-h-screen md:border-b-0">
+        <div className="flex items-center justify-between px-5 py-5">
+          <p className="font-semibold tracking-wide">Vitrio</p>
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <a href="/" className="text-xs text-stone-300 underline">
+              Ver loja
+            </a>
+          </div>
         </div>
-      </header>
-      <div className="mt-4 flex flex-col items-start gap-4 lg:flex-row">
-        <aside className="flex w-full flex-col gap-8 rounded-2xl bg-[var(--surface)] p-6 lg:w-[220px] lg:shrink-0">
-          <NavGroup items={primary} label="Gestão da loja" />
-          <NavGroup items={more} label="Mais" />
-        </aside>
-        <div className="min-w-0 w-full flex-1">{children}</div>
-      </div>
+        <nav className="flex gap-1 overflow-auto px-3 pb-4 md:grid">
+          {links.filter((link) => link.roles.includes(role)).map((link) => {
+            const Icon = link.icon;
+            const active = pathname === link.href;
+            return (
+              <Link key={link.href} href={link.href} data-testid={link.testid} className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${active ? "bg-white text-stone-900" : "text-stone-200"}`}>
+                <Icon size={16} />
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+        <button type="button" onClick={logout} className="m-3 flex items-center gap-2 text-sm text-stone-300">
+          <LogOut size={16} /> Sair
+        </button>
+      </aside>
+      <div className="px-6 py-8">{children}</div>
     </div>
   );
 }

@@ -24,7 +24,7 @@ export default async function CategoryPage({ params }: Props) {
   if (!site || !category) notFound();
   const { origin } = await requestOrigin();
   return (
-    <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-5 py-8 md:px-16 md:py-16">
+    <main className="mx-auto max-w-6xl px-6 py-10">
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -35,9 +35,9 @@ export default async function CategoryPage({ params }: Props) {
           ],
         }}
       />
-      <h1 className="font-serif text-5xl leading-none">{category.name}</h1>
-      {category.description ? <p className="max-w-2xl text-[var(--muted)]">{category.description}</p> : null}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <h1 className="font-serif text-5xl">{category.name}</h1>
+      {category.description ? <p className="mt-3 max-w-2xl text-stone-600">{category.description}</p> : null}
+      <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {category.products.items.map((product) => (
           <ProductCardView key={product.slug} product={product} currency={site.tenant.currency} />
         ))}

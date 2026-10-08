@@ -29,7 +29,7 @@ export default async function ProductPage({ params }: Props) {
   const shown = product.promotional_price ?? product.price;
   const sidebar = site.ads?.some((ad) => ad.position === "SIDEBAR");
   return (
-    <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-5 py-8 md:px-16 md:py-16">
+    <main className="mx-auto max-w-6xl space-y-8 px-6 py-10">
       <AdSlots ads={site.ads} position="PRODUCT_PAGE" />
       <div className={`grid gap-10 ${sidebar ? "lg:grid-cols-[1fr_240px]" : ""}`}>
         <div className="grid gap-10 md:grid-cols-2">
@@ -41,7 +41,7 @@ export default async function ProductPage({ params }: Props) {
                 {product.category_name}
               </Link>
             ) : null}
-            <h1 className="mt-2 font-serif text-5xl leading-none" data-testid="product-title">
+            <h1 className="mt-2 font-serif text-5xl" data-testid="product-title">
               {product.name}
             </h1>
             {product.brand ? <p className="mt-2 text-sm uppercase tracking-wide text-stone-500">{product.brand}</p> : null}

@@ -16,9 +16,9 @@ export default async function ContactPage() {
   if (!site) return <main className="p-8">Loja não encontrada</main>;
   const tenant = site.tenant;
   return (
-    <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-5 py-8 md:px-16 md:py-16">
-      <h1 className="font-serif text-5xl leading-none">Contato</h1>
-      <p className="max-w-xl text-[var(--muted)]">O pedido segue direto com a loja, pelo canal que ela escolheu.</p>
+    <main className="mx-auto max-w-3xl px-6 py-10">
+      <h1 className="font-serif text-5xl">Contato</h1>
+      <p className="mt-4 text-stone-600">O pedido segue direto com a loja, pelo canal que ela escolheu.</p>
       <dl className="mt-8 space-y-3 text-stone-700">
         {tenant.address ? <div><dt className="text-sm text-stone-500">Endereço</dt><dd>{tenant.address}</dd></div> : null}
         {tenant.business_hours ? <div><dt className="text-sm text-stone-500">Horário</dt><dd>{tenant.business_hours}</dd></div> : null}
