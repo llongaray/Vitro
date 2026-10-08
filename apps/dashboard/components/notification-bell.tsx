@@ -13,15 +13,19 @@ export function NotificationBell() {
   const [items, setItems] = useState<Notice[]>([]);
 
   async function load() {
-    const response = await api("/notifications");
-    if (!response.ok) return;
-    const data = await response.json();
-    setUnread(data.unread);
-    setItems(data.items);
+    try {
+      const response = await api("/notifications");
+      if (!response.ok) return;
+      const data = await response.json();
+      setUnread(data.unread);
+      setItems(data.items);
+    } catch {
+      setItems([]);
+    }
   }
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   return (
