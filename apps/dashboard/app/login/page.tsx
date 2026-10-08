@@ -35,28 +35,31 @@ export default function LoginPage() {
     router.replace("/");
   }
 
+  const pending = form.formState.isSubmitting;
+
   return (
     <main className="mx-auto grid min-h-screen max-w-[1440px] items-center gap-4 px-5 py-8 lg:grid-cols-2 lg:px-16">
-      <section className="hidden rounded-2xl bg-[var(--soft)] p-10 lg:block">
+      <section className="hidden rounded-2xl bg-[var(--soft)] p-10 lg:block" aria-hidden="true">
         <p className="text-[40px] text-[var(--brand)]">Vitrio</p>
-        <h1 className="mt-4 font-serif text-5xl leading-none">Tudo pronto para sua próxima vitrine.</h1>
+        <p className="mt-4 font-serif text-5xl leading-none">Tudo pronto para sua próxima vitrine.</p>
         <p className="mt-4 max-w-md text-[var(--muted)]">Organize produtos, personalize a loja e acompanhe o interesse dos clientes.</p>
       </section>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-8">
-        <h2 className="text-[40px] font-normal leading-none">Entrar na loja</h2>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-8" aria-busy={pending}>
+        <h1 className="text-[40px] font-normal leading-none">Entrar na loja</h1>
         <p className="text-[var(--muted)]">Acesse o painel com sua conta.</p>
         <label>
           E-mail
-          <Input data-testid="login-email" type="email" {...form.register("email")} />
+          <Input data-testid="login-email" type="email" autoComplete="email" {...form.register("email")} />
         </label>
         <label>
           Senha
-          <Input data-testid="login-password" type="password" {...form.register("password")} />
+          <Input data-testid="login-password" type="password" autoComplete="current-password" {...form.register("password")} />
         </label>
         {form.formState.errors.root ? <p className="text-sm text-red-700" role="alert">{form.formState.errors.root.message}</p> : null}
         {form.formState.errors.email ? <p className="text-sm text-red-700">{form.formState.errors.email.message}</p> : null}
-        <Button data-testid="login-submit" type="submit" className="w-fit">
-          Entrar
+        {form.formState.errors.password ? <p className="text-sm text-red-700">{form.formState.errors.password.message}</p> : null}
+        <Button data-testid="login-submit" type="submit" className="w-fit" disabled={pending}>
+          {pending ? "Entrando..." : "Entrar"}
         </Button>
       </form>
     </main>
