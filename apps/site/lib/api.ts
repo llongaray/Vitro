@@ -12,15 +12,14 @@ export async function requestOrigin() {
 }
 
 export async function publicGet<T>(path: string, options?: { fresh?: boolean }): Promise<T | null> {
-  const { host, tag } = await requestOrigin();
+  const { host } = await requestOrigin();
+  void options;
   const response = await fetch(`${API}${path}`, {
     headers: {
       "x-forwarded-host": host,
       "x-forwarded-proto": (await headers()).get("x-forwarded-proto") ?? "http",
     },
-    ...(options?.fresh
-      ? { cache: "no-store" as const }
-      : { next: { revalidate: 60, tags: [`tenant:${tag}`] } }),
+    cache: "no-store",
   });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Falha ao consultar a loja (${response.status})`);
