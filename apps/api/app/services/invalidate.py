@@ -16,12 +16,13 @@ async def revalidate_tenant(hostname: str) -> None:
     settings = get_settings()
     url = f"{settings.site_internal_url.rstrip('/')}/api/revalidate"
     try:
-        async with httpx.AsyncClient(timeout=1.0) as client:
-            await client.post(
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.post(
                 url,
                 json={"tag": f"tenant:{hostname}"},
                 headers={"x-revalidate-secret": settings.revalidate_secret},
             )
+            response.raise_for_status()
     except httpx.HTTPError:
         log_json(app_logger, "warning", "revalidate_failed", hostname=hostname)
 
