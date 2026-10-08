@@ -66,5 +66,12 @@ textarea {
   padding: 0.875rem;
   font-size: 0.9375rem;
   color: var(--ink);
-  outline: none;
+}
+
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
 }
