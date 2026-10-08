@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-import { api } from "@/lib/api";
+import { PanelFeedback } from "@/components/panel-page";
+import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 type Overview = { products: number; categories: number; banners: number; pages: number };
 type Summary = {
@@ -23,33 +25,42 @@ export default function HomePage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  function loadSummary(start: string, end: string) {
+  async function loadSummary(start: string, end: string) {
     const params = new URLSearchParams();
     if (start) params.set("from", start);
     if (end) params.set("to", end);
     const query = params.toString();
-    api(`/analytics/summary${query ? `?${query}` : ""}`).then(async (response) => {
-      if (response.ok) setSummary(await response.json());
+    const response = await api(`/analytics/summary${query ? `?${query}` : ""}`);
+    if (!response.ok) throw new Error(await readError(response));
+    setSummary(await response.json());
+  }
+
+  async function load(start = from, end = to) {
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const overview = await api("/settings/overview");
+      if (!overview.ok) throw new Error(await readError(overview));
+      setData(await overview.json());
+      await loadSummary(start, end);
     });
   }
 
   useEffect(() => {
-    api("/settings/overview").then(async (response) => {
-      if (response.ok) setData(await response.json());
-    });
-    loadSummary("", "");
+    void load("", "");
   }, []);
 
   return (
     <main className="flex flex-col gap-4" data-testid="dashboard-home">
       <h1 className="text-[40px] font-normal leading-none">Visão geral</h1>
       <p className="text-base text-[var(--muted)]">Acompanhe o que está publicado e o interesse na vitrine.</p>
+      <PanelFeedback loading={loading} error={loadError} onRetry={() => void load(from, to)} />
       <form
         className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6"
         onSubmit={(event) => {
           event.preventDefault();
-          loadSummary(from, to);
+          void load(from, to);
         }}
       >
         <label>
