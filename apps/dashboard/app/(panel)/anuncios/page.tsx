@@ -40,9 +40,9 @@ export default function AdsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-8">
-      <h1 className="font-serif text-4xl">Anúncios</h1>
-      <form onSubmit={onSubmit} className="grid max-w-xl gap-3">
+    <main className="flex flex-col gap-4">
+      <h1 className="text-[40px] font-normal leading-none">Anúncios</h1>
+      <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <Input data-testid="ad-title" name="title" placeholder="Título" required />
         <Input data-testid="ad-url" name="url" placeholder="https://" />
         <select data-testid="ad-position" name="position" className="rounded-xl border border-stone-300 px-3 py-2 text-sm" defaultValue="HOME_TOP">
@@ -52,12 +52,12 @@ export default function AdsPage() {
           <option value="PRODUCT_PAGE">Página do produto</option>
           <option value="SIDEBAR">Lateral</option>
         </select>
-        <button data-testid="ad-submit" className="w-fit rounded-full bg-stone-900 px-4 py-2 text-sm text-white" type="submit">
+        <button data-testid="ad-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Publicar
         </button>
       </form>
       {message ? <p className="text-sm">{message}</p> : null}
-      <ul className="divide-y divide-stone-200 rounded-2xl bg-white ring-1 ring-stone-200">
+      <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item) => (
           <li key={item.id} className="flex items-center justify-between px-4 py-3 text-sm">
             <span>{item.title}</span>
