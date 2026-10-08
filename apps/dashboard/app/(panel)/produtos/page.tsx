@@ -3,21 +3,28 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { Notice } from "@vitrio/ui";
-import { api } from "@/lib/api";
+import { PanelFeedback } from "@/components/panel-page";
+import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 type Product = { id: string; name: string; slug: string; published: boolean; is_active: boolean };
 
 export default function ProductsPage() {
   const [items, setItems] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  async function load() {
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const response = await api("/products?limit=100");
+      if (!response.ok) throw new Error(await readError(response));
+      const body = await response.json();
+      setItems(body.items ?? []);
+    });
+  }
 
   useEffect(() => {
-    api("/products?limit=100").then(async (response) => {
-      if (response.ok) {
-        const body = await response.json();
-        setItems(body.items);
-      }
-    });
+    void load();
   }, []);
 
   return (
@@ -31,7 +38,7 @@ export default function ProductsPage() {
           Novo produto
         </Link>
       </div>
-      {items.length === 0 ? <Notice tone="empty" title="Nenhum produto cadastrado" text="Publique o primeiro produto da vitrine." /> : null}
+      <PanelFeedback loading={loading} error={loadError} onRetry={load} empty={!loading && items.length === 0} emptyTitle="Nenhum produto cadastrado" emptyText="Publique o primeiro produto da vitrine." />
       <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item) => (
           <li key={item.id} className="flex items-center justify-between gap-4">
