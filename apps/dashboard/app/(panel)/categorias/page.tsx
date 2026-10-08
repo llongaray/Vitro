@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Input, Notice } from "@vitrio/ui";
-import { PanelPage } from "@/components/panel-page";
+import { PanelFeedback, PanelPage } from "@/components/panel-page";
 import { SeoPreview } from "@/components/seo-preview";
 import { api, readError } from "@/lib/api";
 
@@ -16,11 +16,21 @@ type Category = { id: string; name: string; slug: string; is_active: boolean };
 
 export default function CategoriesPage() {
   const [items, setItems] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [saved, setSaved] = useState(false);
   const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { name: "" } });
 
   async function load() {
+    setLoading(true);
+    setLoadError("");
     const response = await api("/categories");
-    if (response.ok) setItems(await response.json());
+    setLoading(false);
+    if (!response.ok) {
+      setLoadError(await readError(response));
+      return;
+    }
+    setItems(await response.json());
   }
 
   useEffect(() => {
@@ -30,9 +40,11 @@ export default function CategoriesPage() {
   async function onSubmit(values: FormValues) {
     const response = await api("/categories", { method: "POST", body: JSON.stringify(values) });
     if (!response.ok) {
+      setSaved(false);
       form.setError("root", { message: await readError(response) });
       return;
     }
+    setSaved(true);
     form.reset();
     await load();
   }
@@ -50,7 +62,8 @@ export default function CategoriesPage() {
           Adicionar
         </button>
       </form>
-      {items.length === 0 ? <Notice tone="empty" title="Nenhuma categoria cadastrada" text="Cadastre a primeira categoria da loja." /> : null}
+      {saved ? <Notice tone="success" title="Categoria salva" /> : null}
+      <PanelFeedback loading={loading} error={loadError} onRetry={load} empty={!loading && items.length === 0} emptyTitle="Nenhuma categoria cadastrada" emptyText="Cadastre a primeira categoria da loja." />
       <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item) => (
           <li key={item.id} className="flex items-center justify-between gap-4">
