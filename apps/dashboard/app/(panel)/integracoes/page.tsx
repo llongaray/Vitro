@@ -65,8 +65,8 @@ export default function IntegrationsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-8">
-      <h1 className="font-serif text-4xl">Integrações</h1>
+    <main className="flex flex-col gap-4">
+      <h1 className="text-[40px] font-normal leading-none">Integrações</h1>
       <p className="text-sm text-stone-600">Nesta fase entram só identificadores públicos. Um segredo, se informado depois, fica cifrado e não volta na resposta.</p>
       {providers.map((provider) => {
         const draft = drafts[provider.id] ?? { public_id: "", enabled: false };
@@ -93,7 +93,7 @@ export default function IntegrationsPage() {
               />
               Ativa
             </label>
-            <button className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white" type="submit">
+            <button className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
               Salvar
             </button>
           </form>
@@ -106,7 +106,7 @@ export default function IntegrationsPage() {
             Nome
             <Input value={keyName} onChange={(event) => setKeyName(event.target.value)} />
           </label>
-          <button className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white" type="submit">
+          <button className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
             Gerar chave
           </button>
         </form>
