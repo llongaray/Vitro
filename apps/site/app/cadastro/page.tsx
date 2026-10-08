@@ -72,9 +72,12 @@ export default function SignupPage() {
   const [contact, setContact] = useState<SiteContact | null>(null);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+  const [pending, setPending] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setPending(true);
+    setError("");
     const form = new FormData(event.currentTarget);
     const response = await fetch("/api/v1/public/customers", {
       method: "POST",
@@ -90,12 +93,14 @@ export default function SignupPage() {
     });
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
+      setPending(false);
       setError(typeof body.detail === "string" ? body.detail : "Não foi possível cadastrar");
       return;
     }
     const body = await response.json();
     setCoupon(body.coupon);
     setDone(true);
+    setPending(false);
     const site = await fetch("/api/v1/public/site", { headers: { "x-forwarded-host": window.location.host } });
     if (site.ok) {
       const payload = await site.json();
@@ -197,9 +202,9 @@ export default function SignupPage() {
                 <input name="accepted_marketing" type="checkbox" className="mt-1" />
                 Quero receber novidades e ofertas exclusivas da loja
               </label>
-              {error ? <p className="text-sm text-red-700">{error}</p> : null}
-              <button data-testid="customer-submit" className="mt-1 rounded-full bg-stone-950 px-5 py-2.5 text-sm text-white" type="submit">
-                Cadastrar →
+              {error ? <p className="text-sm text-red-700" role="alert">{error}</p> : null}
+              <button data-testid="customer-submit" className="mt-1 inline-flex min-h-11 w-fit items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)] disabled:opacity-50" type="submit" disabled={pending}>
+                {pending ? "Enviando..." : "Cadastrar"}
               </button>
             </form>
           )}
