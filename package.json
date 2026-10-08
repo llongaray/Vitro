@@ -1,0 +1,13 @@
+{
+  "name": "vitrio",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev:site": "pnpm --filter @vitrio/site dev",
+    "dev:dashboard": "pnpm --filter @vitrio/dashboard dev",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1"
+  }
+}
