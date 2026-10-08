@@ -19,10 +19,10 @@ export default function ClearancePage() {
   }, []);
 
   return (
-    <main>
-      <h1 className="text-3xl font-semibold">Liquidação</h1>
+    <main className="flex flex-col gap-4">
+      <h1 className="text-[40px] font-normal leading-none">Liquidação</h1>
       <p className="mt-2 text-stone-600">A vigência e o rótulo ficam no cadastro do produto.</p>
-      <ul className="mt-6 divide-y rounded-2xl bg-white ring-1 ring-stone-200">
+      <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item) => (
           <li key={item.id} className="flex items-center justify-between px-4 py-3">
             <span>{item.clearance_label || item.name}</span>
