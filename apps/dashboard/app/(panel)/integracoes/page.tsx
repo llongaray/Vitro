@@ -2,7 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 
-import { Input } from "@vitrio/ui";
+import { Input, Notice } from "@vitrio/ui";
+import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
 
 const providers = [
@@ -22,9 +23,19 @@ export default function IntegrationsPage() {
   const [keyName, setKeyName] = useState("Site");
   const [freshKey, setFreshKey] = useState("");
   const [message, setMessage] = useState("");
+  const [messageOk, setMessageOk] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   async function load() {
+    setLoading(true);
+    setLoadError("");
     const [integrations, apiKeys] = await Promise.all([api("/integrations"), api("/api-keys")]);
+    setLoading(false);
+    if (!integrations.ok) {
+      setLoadError(await readError(integrations));
+      return;
+    }
     if (integrations.ok) {
       const data = (await integrations.json()) as Integration[];
       setRows(data);
@@ -43,6 +54,7 @@ export default function IntegrationsPage() {
       method: "PUT",
       body: JSON.stringify({ public_id: draft.public_id, enabled: draft.enabled }),
     });
+    setMessageOk(response.ok);
     setMessage(response.ok ? "Integração salva." : await readError(response));
     await load();
   }
@@ -51,6 +63,7 @@ export default function IntegrationsPage() {
     event.preventDefault();
     const response = await api("/api-keys", { method: "POST", body: JSON.stringify({ name: keyName }) });
     if (!response.ok) {
+      setMessageOk(false);
       setMessage(await readError(response));
       return;
     }
@@ -67,13 +80,14 @@ export default function IntegrationsPage() {
   return (
     <main className="flex flex-col gap-4">
       <h1 className="text-[40px] font-normal leading-none">Integrações</h1>
-      <p className="text-sm text-stone-600">Nesta fase entram só identificadores públicos. Um segredo, se informado depois, fica cifrado e não volta na resposta.</p>
+      <p className="text-base text-[var(--muted)]">Nesta fase entram só identificadores públicos. Um segredo, se informado depois, fica cifrado e não volta na resposta.</p>
+      <PanelFeedback loading={loading} error={loadError} onRetry={load} />
       {providers.map((provider) => {
         const draft = drafts[provider.id] ?? { public_id: "", enabled: false };
         return (
           <form
             key={provider.id}
-            className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-stone-200"
+            className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6"
             onSubmit={(event) => {
               event.preventDefault();
               save(provider.id);
@@ -99,7 +113,7 @@ export default function IntegrationsPage() {
           </form>
         );
       })}
-      <section className="space-y-3">
+      <section className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <h2 className="font-serif text-3xl">Chave da API</h2>
         <form onSubmit={createKey} className="flex flex-wrap items-end gap-3">
           <label className="text-sm">
@@ -130,7 +144,7 @@ export default function IntegrationsPage() {
           ))}
         </ul>
         {rows.length ? null : null}
-        {message ? <p className="text-sm">{message}</p> : null}
+        {message ? <Notice tone={messageOk ? "success" : "error"} title={message} /> : null}
       </section>
     </main>
   );
