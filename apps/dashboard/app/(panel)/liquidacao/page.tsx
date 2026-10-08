@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 type Product = { id: string; name: string; is_clearance: boolean; clearance_label: string | null };
 
@@ -14,16 +15,12 @@ export default function ClearancePage() {
   const [loadError, setLoadError] = useState("");
 
   async function load() {
-    setLoading(true);
-    setLoadError("");
-    const response = await api("/products?limit=100");
-    setLoading(false);
-    if (!response.ok) {
-      setLoadError(await readError(response));
-      return;
-    }
-    const body = await response.json();
-    setItems(body.items.filter((item: Product) => item.is_clearance));
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const response = await api("/products?limit=100");
+      if (!response.ok) throw new Error(await readError(response));
+      const body = await response.json();
+      setItems((body.items ?? []).filter((item: Product) => item.is_clearance));
+    });
   }
 
   useEffect(() => {
