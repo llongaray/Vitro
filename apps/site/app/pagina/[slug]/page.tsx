@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import Link from "next/link";
+
 import { StorePage } from "@/components/store-page";
 import { getSite, publicGet, requestOrigin } from "@/lib/api";
 import { seoMetadata } from "@/lib/seo";
@@ -24,6 +26,9 @@ export default async function InstitutionalPage({ params }: Props) {
   return (
     <StorePage crumb={page.title} title={page.title}>
       <article className="whitespace-pre-wrap rounded-2xl bg-[var(--surface)] p-6 text-[var(--ink)]">{page.content}</article>
+      <Link href="/produtos" className="inline-flex min-h-11 w-fit items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]">
+        Ver catálogo
+      </Link>
     </StorePage>
   );
 }
