@@ -34,18 +34,20 @@ export function RegisterStore() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-6 py-16">
-      <p className="text-sm uppercase tracking-[0.2em] text-stone-500">Vitrio</p>
-      <h1 className="mt-3 font-serif text-5xl text-stone-900">Crie sua vitrine</h1>
-      <p className="mt-4 text-stone-600">Uma loja local, com catálogo e contato direto. Sem carrinho.</p>
-      <form onSubmit={onSubmit} className="mt-8 grid gap-4">
+    <main className="mx-auto grid min-h-screen max-w-[1440px] items-center gap-4 px-5 py-8 lg:grid-cols-2 lg:px-16">
+      <section className="rounded-2xl bg-[var(--soft)] p-8">
+        <p className="text-2xl text-[var(--brand)]">Vitrio</p>
+        <h1 className="mt-4 font-serif text-5xl leading-none">Sua loja merece uma vitrine</h1>
+        <p className="mt-4 max-w-md text-[var(--muted)]">Catálogo, identidade visual e atendimento direto, sem carrinho.</p>
+      </section>
+      <form onSubmit={onSubmit} className="grid gap-4 rounded-2xl bg-[var(--surface)] p-8">
         <Field name="store_name" label="Nome da loja" required />
-        <Field name="slug" label="Endereço" required placeholder="minha-loja" />
+        <Field name="slug" label="Endereço da loja" required placeholder="minha-loja" />
         <Field name="owner_name" label="Seu nome" required />
         <Field name="email" label="E-mail" type="email" required />
         <Field name="password" label="Senha" type="password" required minLength={8} />
-        {error ? <p className="text-sm text-red-700">{error}</p> : null}
-        <button className="rounded-full bg-stone-900 px-5 py-3 text-stone-50" disabled={pending} type="submit">
+        {error ? <p className="text-sm text-red-700" role="alert">{error}</p> : null}
+        <button className="inline-flex min-h-11 w-fit items-center rounded-[10px] bg-[var(--brand,#245b45)] px-3.5 text-[15px] text-white" disabled={pending} type="submit">
           {pending ? "Criando..." : "Criar loja"}
         </button>
       </form>
@@ -58,7 +60,7 @@ function Field(props: { name: string; label: string; type?: string; required?: b
     <label className="grid gap-1 text-sm font-medium">
       {props.label}
       <input
-        className="rounded-xl border border-stone-300 px-3 py-2 font-normal"
+        className="w-full rounded-lg bg-[var(--bg,#f4efe7)] px-3.5 py-3.5 text-[15px] font-normal outline-none"
         name={props.name}
         type={props.type ?? "text"}
         required={props.required}
