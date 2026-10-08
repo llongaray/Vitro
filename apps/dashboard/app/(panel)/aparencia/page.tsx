@@ -25,22 +25,44 @@ export default function AppearancePage() {
   const [messageOk, setMessageOk] = useState(true);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [appearanceReady, setAppearanceReady] = useState(false);
   const [themes, setThemes] = useState<{ id: string; name: string; fonts: string }[]>([]);
+  const [themeLoading, setThemeLoading] = useState(true);
+  const [themeError, setThemeError] = useState("");
 
-  async function load() {
+  async function loadAppearance() {
     await runPanelLoad(setLoading, setLoadError, async () => {
-      const [appearance, themeResponse] = await Promise.all([api("/appearance"), api("/themes")]);
-      if (!appearance.ok) throw new Error(await readError(appearance));
-      const data = await appearance.json();
+      const response = await api("/appearance");
+      if (!response.ok) throw new Error(await readError(response));
+      const data = await response.json();
       setFontPair(data.font_pair);
       setHeroText(data.hero_text ?? "");
       setOrder(data.section_order ?? []);
-      if (themeResponse.ok) setThemes(await themeResponse.json());
+      setAppearanceReady(true);
     });
   }
 
+  async function loadThemes() {
+    setThemeLoading(true);
+    setThemeError("");
+    try {
+      const response = await api("/themes");
+      if (!response.ok) {
+        setThemeError(await readError(response));
+        return;
+      }
+      const data = await response.json();
+      setThemes(Array.isArray(data) ? data : []);
+    } catch {
+      setThemeError("A conexão falhou. Tente de novo.");
+    } finally {
+      setThemeLoading(false);
+    }
+  }
+
   useEffect(() => {
-    void load();
+    void loadAppearance();
+    void loadThemes();
   }, []);
 
   async function applyTheme(id: string) {
@@ -71,6 +93,7 @@ export default function AppearancePage() {
 
   async function save(event: FormEvent) {
     event.preventDefault();
+    if (!appearanceReady) return;
     const response = await api("/appearance", {
       method: "PATCH",
       body: JSON.stringify({ font_pair: fontPair, hero_text: heroText, section_order: order }),
@@ -83,7 +106,21 @@ export default function AppearancePage() {
     <main className="flex flex-col gap-4">
       <h1 className="text-[40px] font-normal leading-none">Aparência</h1>
       <p className="text-base text-[var(--muted)]">Tema, texto do hero e a ordem das seções da home.</p>
-      <PanelFeedback loading={loading} error={loadError} onRetry={load} />
+      <PanelFeedback loading={loading} error={loadError} onRetry={() => void loadAppearance()} />
+      {themeLoading ? <Notice tone="loading" title="Carregando temas" text="Buscando os temas da loja." /> : null}
+      {themeError ? (
+        <Notice
+          tone="error"
+          title="Não foi possível carregar os temas"
+          text={themeError}
+          action={
+            <button type="button" data-testid="theme-load-retry" className="inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" onClick={() => void loadThemes()}>
+              Tentar de novo
+            </button>
+          }
+        />
+      ) : null}
+      {!themeLoading && !themeError && themes.length === 0 ? <Notice tone="empty" title="Nenhum tema disponível" text="A loja segue com a aparência já salva." /> : null}
       <div className="grid gap-3 sm:grid-cols-2">
         {themes.map((theme) => (
           <button
@@ -99,6 +136,7 @@ export default function AppearancePage() {
         ))}
       </div>
       <form onSubmit={save} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
+        <fieldset disabled={!appearanceReady} className="flex flex-col gap-4">
         <label className="block text-sm">
           Par de fontes
           <select className="mt-1 w-full rounded-xl border border-stone-300 px-3 py-2" value={fontPair} onChange={(event) => setFontPair(event.target.value)}>
@@ -130,11 +168,12 @@ export default function AppearancePage() {
             </li>
           ))}
         </ol>
+        </fieldset>
         {message ? <Notice tone={messageOk ? "success" : "error"} title={message} /> : null}
         <p className="sr-only" data-testid="appearance-saved">
           {message}
         </p>
-        <button data-testid="appearance-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
+        <button data-testid="appearance-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)] disabled:opacity-50" type="submit" disabled={!appearanceReady}>
           Salvar aparência
         </button>
       </form>
