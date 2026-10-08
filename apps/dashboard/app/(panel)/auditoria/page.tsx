@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { PanelFeedback, PanelPage } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 type Entry = {
   id: string;
@@ -19,16 +20,12 @@ export default function AuditPage() {
   const [loadError, setLoadError] = useState("");
 
   async function load() {
-    setLoading(true);
-    setLoadError("");
-    const response = await api("/audit");
-    setLoading(false);
-    if (!response.ok) {
-      setLoadError(await readError(response));
-      return;
-    }
-    const body = await response.json();
-    setItems(body.items);
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const response = await api("/audit");
+      if (!response.ok) throw new Error(await readError(response));
+      const body = await response.json();
+      setItems(body.items ?? []);
+    });
   }
 
   useEffect(() => {
