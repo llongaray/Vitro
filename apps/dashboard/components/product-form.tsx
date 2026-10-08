@@ -111,9 +111,8 @@ export function ProductForm({ productId }: { productId?: string }) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,696px)_minmax(280px,428px)]">
-        <section className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
-          <h2 className="text-[22px]">Informações do produto</h2>
+      <section className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
+        <h2 className="text-[22px]">Dados do produto</h2>
           <label>
             Nome do produto *
             <Input data-testid="product-name" placeholder="Ex.: Camisa de linho" {...form.register("name")} />
@@ -176,8 +175,6 @@ export function ProductForm({ productId }: { productId?: string }) {
             <Input {...form.register("seo_description")} />
           </label>
           <SeoPreview autoTitle={form.watch("name")} autoDescription={form.watch("short_description")} manualTitle={form.watch("seo_title")} manualDescription={form.watch("seo_description")} />
-        </section>
-        <aside className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
           <h2 className="text-[22px]">Imagens</h2>
           <label className="drop">
             Adicionar fotos • JPG, PNG ou WebP
@@ -202,8 +199,7 @@ export function ProductForm({ productId }: { productId?: string }) {
             <input data-testid="product-publish" type="checkbox" {...form.register("publish")} />
             Visível no catálogo
           </label>
-        </aside>
-      </div>
+        </section>
       {form.formState.errors.root ? <p className="text-sm text-red-700">{form.formState.errors.root.message}</p> : null}
       <div className="flex flex-wrap gap-4">
         <Button
