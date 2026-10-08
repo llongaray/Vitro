@@ -29,7 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="pt-BR">
       <body
         className={`${sans.variable} ${serif.variable} ${editorialSans.variable} ${editorialSerif.variable} ${site?.tenant.font_pair === "editorial" ? "font-editorial" : "font-sans"} flex min-h-screen flex-col antialiased`}
-        style={site ? { ["--store" as string]: site.tenant.primary_color } : undefined}
+        style={site ? { ["--store" as string]: site.tenant.primary_color, ["--brand" as string]: site.tenant.primary_color } : undefined}
       >
         {site ? (
           <>
