@@ -3,7 +3,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import { Notice } from "@vitrio/ui";
+import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 const labels: Record<string, string> = {
   hero: "Hero",
@@ -22,24 +24,23 @@ export default function AppearancePage() {
   const [message, setMessage] = useState("");
   const [messageOk, setMessageOk] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [themes, setThemes] = useState<{ id: string; name: string; fonts: string }[]>([]);
 
-  useEffect(() => {
-    api("/appearance").then(async (response) => {
-      setLoading(false);
-      if (!response.ok) {
-        setMessageOk(false);
-        setMessage(await readError(response));
-        return;
-      }
-      const data = await response.json();
+  async function load() {
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const [appearance, themeResponse] = await Promise.all([api("/appearance"), api("/themes")]);
+      if (!appearance.ok) throw new Error(await readError(appearance));
+      const data = await appearance.json();
       setFontPair(data.font_pair);
       setHeroText(data.hero_text ?? "");
-      setOrder(data.section_order);
+      setOrder(data.section_order ?? []);
+      if (themeResponse.ok) setThemes(await themeResponse.json());
     });
-    api("/themes").then(async (response) => {
-      if (response.ok) setThemes(await response.json());
-    });
+  }
+
+  useEffect(() => {
+    void load();
   }, []);
 
   async function applyTheme(id: string) {
@@ -82,7 +83,7 @@ export default function AppearancePage() {
     <main className="flex flex-col gap-4">
       <h1 className="text-[40px] font-normal leading-none">Aparência</h1>
       <p className="text-base text-[var(--muted)]">Tema, texto do hero e a ordem das seções da home.</p>
-      {loading ? <Notice tone="loading" title="Carregando" text="Buscando a aparência da loja." /> : null}
+      <PanelFeedback loading={loading} error={loadError} onRetry={load} />
       <div className="grid gap-3 sm:grid-cols-2">
         {themes.map((theme) => (
           <button
