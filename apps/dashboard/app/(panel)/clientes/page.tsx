@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { Notice } from "@vitrio/ui";
+import { PanelPage } from "@/components/panel-page";
 import { api } from "@/lib/api";
 
 type Customer = { id: string; name: string; email: string; phone: string | null; accepted_terms: boolean };
@@ -16,18 +18,18 @@ export default function CustomersPage() {
   }, []);
 
   return (
-    <main>
-      <h1 className="text-3xl font-semibold">Clientes</h1>
-      <ul className="mt-6 divide-y rounded-2xl bg-white ring-1 ring-stone-200">
+    <PanelPage title="Clientes" lede="Pessoas que deixaram contato na vitrine.">
+      {items.length === 0 ? <Notice tone="empty" title="Nenhum cliente cadastrado" text="Os cadastros da vitrine aparecem aqui." /> : null}
+      <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item) => (
-          <li key={item.id} className="px-4 py-3">
+          <li key={item.id}>
             <p>{item.name}</p>
-            <p className="text-sm text-stone-500">
+            <p className="text-sm text-[var(--muted)]">
               {item.email} {item.phone ? `· ${item.phone}` : ""}
             </p>
           </li>
         ))}
       </ul>
-    </main>
+    </PanelPage>
   );
 }
