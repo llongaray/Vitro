@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { claimSubmit, publishFlag, releaseSubmit, runPanelLoad } from "./panel-guards.ts";
+import { canMutateProduct, claimSubmit, isCurrentRequest, publishFlag, releaseSubmit, runPanelLoad } from "./panel-guards.ts";
 
 test("falha de rede encerra o carregamento e guarda a mensagem", async () => {
   let loading = true;
@@ -70,4 +70,16 @@ test("rascunho fica fora do catálogo e o envio principal segue o checkbox", () 
   assert.equal(publishFlag("draft", false), false);
   assert.equal(publishFlag("save", true), true);
   assert.equal(publishFlag("save", false), false);
+});
+
+test("produto não carregado não pode ser salvo e resposta antiga é ignorada", () => {
+  assert.equal(canMutateProduct("prod-a", false), false);
+  assert.equal(canMutateProduct("prod-a", true), true);
+  assert.equal(canMutateProduct(undefined, false), true);
+  let current = 1;
+  const first = current;
+  current += 1;
+  const second = current;
+  assert.equal(isCurrentRequest(first, current), false);
+  assert.equal(isCurrentRequest(second, current), true);
 });
