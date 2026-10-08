@@ -15,7 +15,7 @@ test("cadastro gera aviso e o tema editorial antecipa a seção sobre", async ({
   await page.getByTestId("customer-phone").fill("11988887777");
   await page.getByTestId("customer-terms").check();
   await page.getByTestId("customer-submit").click();
-  await expect(page.getByRole("heading", { name: "Cadastro feito" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Recebemos seu cadastro" })).toBeVisible();
 
   await page.goto("/admin");
   await page.getByTestId("notification-bell").click();
