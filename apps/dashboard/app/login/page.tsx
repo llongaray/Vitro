@@ -36,10 +36,15 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
+    <main className="mx-auto grid min-h-screen max-w-[1440px] items-center gap-4 px-5 py-8 lg:grid-cols-2 lg:px-16">
+      <section className="hidden rounded-2xl bg-[var(--soft)] p-10 lg:block">
+        <p className="text-[40px] text-[var(--brand)]">Vitrio</p>
+        <h1 className="mt-4 font-serif text-5xl leading-none">Tudo pronto para sua próxima vitrine.</h1>
+        <p className="mt-4 max-w-md text-[var(--muted)]">Organize produtos, personalize a loja e acompanhe o interesse dos clientes.</p>
+      </section>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-8">
-      <p className="text-2xl text-[var(--brand)]">Vitrio</p>
-      <h1 className="text-[40px] font-normal leading-none">Entrar na loja</h1>
+        <h2 className="text-[40px] font-normal leading-none">Entrar na loja</h2>
+        <p className="text-[var(--muted)]">Acesse o painel com sua conta.</p>
         <label>
           E-mail
           <Input data-testid="login-email" type="email" {...form.register("email")} />
@@ -48,9 +53,9 @@ export default function LoginPage() {
           Senha
           <Input data-testid="login-password" type="password" {...form.register("password")} />
         </label>
-        {form.formState.errors.root ? <p className="text-sm text-red-700">{form.formState.errors.root.message}</p> : null}
+        {form.formState.errors.root ? <p className="text-sm text-red-700" role="alert">{form.formState.errors.root.message}</p> : null}
         {form.formState.errors.email ? <p className="text-sm text-red-700">{form.formState.errors.email.message}</p> : null}
-        <Button data-testid="login-submit" type="submit">
+        <Button data-testid="login-submit" type="submit" className="w-fit">
           Entrar
         </Button>
       </form>
