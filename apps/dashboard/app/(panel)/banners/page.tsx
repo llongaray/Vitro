@@ -53,9 +53,9 @@ export default function BannersPage() {
   }
 
   return (
-    <main>
-      <h1 className="text-3xl font-semibold">Banners</h1>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 grid max-w-xl gap-3">
+    <main className="flex flex-col gap-4">
+      <h1 className="text-[40px] font-normal leading-none">Banners</h1>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <label>
           Título
           <Input {...form.register("title")} />
@@ -68,7 +68,7 @@ export default function BannersPage() {
           Imagem
           <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => event.target.files?.[0] && upload(event.target.files[0])} />
         </label>
-        <button className="w-fit rounded-full bg-stone-900 px-4 py-2 text-sm text-white" type="submit">
+        <button className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Publicar banner
         </button>
       </form>
