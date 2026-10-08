@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ContactLink } from "@/components/contact-link";
+import { StorePage } from "@/components/store-page";
 import { getSite, requestOrigin } from "@/lib/api";
 import { seoMetadata } from "@/lib/seo";
 
@@ -15,19 +16,34 @@ export default async function ContactPage() {
   const site = await getSite();
   if (!site) return <main className="p-8">Loja não encontrada</main>;
   const tenant = site.tenant;
+  const rows = [
+    ["Endereço", tenant.address],
+    ["Horário", tenant.business_hours],
+    ["Telefone", tenant.phone],
+    ["Instagram", tenant.instagram],
+  ].filter((row): row is [string, string] => Boolean(row[1]));
   return (
-    <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-5 py-8 md:px-16 md:py-16">
-      <h1 className="font-serif text-5xl leading-none">Contato</h1>
-      <p className="max-w-xl text-[var(--muted)]">O pedido segue direto com a loja, pelo canal que ela escolheu.</p>
-      <dl className="mt-8 space-y-3 text-stone-700">
-        {tenant.address ? <div><dt className="text-sm text-stone-500">Endereço</dt><dd>{tenant.address}</dd></div> : null}
-        {tenant.business_hours ? <div><dt className="text-sm text-stone-500">Horário</dt><dd>{tenant.business_hours}</dd></div> : null}
-        {tenant.phone ? <div><dt className="text-sm text-stone-500">Telefone</dt><dd>{tenant.phone}</dd></div> : null}
-        {tenant.instagram ? <div><dt className="text-sm text-stone-500">Instagram</dt><dd>{tenant.instagram}</dd></div> : null}
-      </dl>
-      <div className="mt-8">
-        <ContactLink contact={tenant.contact} message="Olá! Vim pelo site e gostaria de mais informações." />
+    <StorePage crumb="Contato" title="Contato" lede="O pedido segue direto com a loja, pelo canal que ela escolheu.">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <section className="rounded-2xl bg-[var(--surface)] p-7">
+          <h2 className="font-serif text-[28px]">Fale com a loja</h2>
+          <dl className="mt-4 grid gap-4 text-[var(--ink)]">
+            {rows.map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-sm text-[var(--muted)]">{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+        <section className="rounded-2xl bg-[var(--surface)] p-7">
+          <h2 className="text-[22px]">Atendimento</h2>
+          <p className="mt-2 text-[var(--muted)]">Envie uma mensagem e a equipe responde no canal configurado.</p>
+          <div className="mt-6">
+            <ContactLink contact={tenant.contact} message="Olá! Vim pelo site e gostaria de mais informações." />
+          </div>
+        </section>
       </div>
-    </main>
+    </StorePage>
   );
 }
