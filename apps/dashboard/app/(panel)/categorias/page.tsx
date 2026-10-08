@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Input } from "@vitrio/ui";
+import { Input, Notice } from "@vitrio/ui";
+import { PanelPage } from "@/components/panel-page";
 import { SeoPreview } from "@/components/seo-preview";
 import { api, readError } from "@/lib/api";
 
@@ -37,27 +38,27 @@ export default function CategoriesPage() {
   }
 
   return (
-    <main>
-      <h1 className="text-3xl font-semibold">Categorias</h1>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 flex flex-wrap items-end gap-3">
-        <label className="min-w-64">
-          Nome
-          <Input data-testid="category-name" {...form.register("name")} />
+    <PanelPage title="Categorias" lede="Organize os produtos e facilite a descoberta.">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
+        <label>
+          Nome da categoria
+          <Input data-testid="category-name" placeholder="Informe o nome da categoria" {...form.register("name")} />
         </label>
         <SeoPreview autoTitle={form.watch("name")} />
-        <button data-testid="category-submit" className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white" type="submit">
+        {form.formState.errors.root ? <p className="text-sm text-red-700" role="alert">{form.formState.errors.root.message}</p> : null}
+        <button data-testid="category-submit" className="inline-flex min-h-11 w-fit items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Adicionar
         </button>
       </form>
-      {form.formState.errors.root ? <p className="mt-2 text-sm text-red-700">{form.formState.errors.root.message}</p> : null}
-      <ul className="mt-6 divide-y divide-stone-200 rounded-2xl bg-white ring-1 ring-stone-200">
+      {items.length === 0 ? <Notice tone="empty" title="Nenhuma categoria cadastrada" text="Cadastre a primeira categoria da loja." /> : null}
+      <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item) => (
-          <li key={item.id} className="flex items-center justify-between px-4 py-3">
+          <li key={item.id} className="flex items-center justify-between gap-4">
             <span>{item.name}</span>
-            <span className="text-sm text-stone-500">{item.is_active ? "Ativa" : "Inativa"}</span>
+            <span className="text-sm text-[var(--muted)]">{item.is_active ? "Ativa" : "Inativa"}</span>
           </li>
         ))}
       </ul>
-    </main>
+    </PanelPage>
   );
 }
