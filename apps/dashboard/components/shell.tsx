@@ -53,53 +53,104 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLElement>(null);
+  const restoreFocus = useRef(false);
 
   useEffect(() => {
     let active = true;
-    fetch("/api/v1/auth/refresh", { method: "POST", credentials: "include" }).then(async (response) => {
-      if (!active) return;
-      if (!response.ok) {
-        router.replace("/login");
-        return;
-      }
-      const body = await response.json();
-      const { setAccessToken } = await import("@/lib/api");
-      setAccessToken(body.access_token);
-      const me = await api("/auth/me");
-      if (me.ok) {
-        const profile = await me.json();
-        setRole(profile.role);
-        if (profile.name) setAccountName(profile.name);
-      }
-      const settings = await api("/settings");
-      if (settings.ok) {
-        const store = await settings.json();
-        if (store.trade_name) setStoreName(store.trade_name);
-        if (store.primary_color) document.documentElement.style.setProperty("--brand", store.primary_color);
-      }
-      setReady(true);
-    });
+    fetch("/api/v1/auth/refresh", { method: "POST", credentials: "include" })
+      .then(async (response) => {
+        if (!active) return;
+        if (!response.ok) {
+          router.replace("/login");
+          return;
+        }
+        const body = await response.json();
+        const { setAccessToken } = await import("@/lib/api");
+        setAccessToken(body.access_token);
+        const me = await api("/auth/me");
+        if (me.ok) {
+          const profile = await me.json();
+          setRole(profile.role);
+          if (profile.name) setAccountName(profile.name);
+        }
+        const settings = await api("/settings");
+        if (settings.ok) {
+          const store = await settings.json();
+          if (store.trade_name) setStoreName(store.trade_name);
+          if (store.primary_color) document.documentElement.style.setProperty("--brand", store.primary_color);
+        }
+        if (active) setReady(true);
+      })
+      .catch(() => {
+        if (active) router.replace("/login");
+      });
     return () => {
       active = false;
     };
   }, [router]);
 
   useEffect(() => {
-    if (!menuOpen) return;
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    function closeOnDesktop() {
+      if (desktop.matches) setMenuOpen(false);
+    }
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      if (restoreFocus.current) {
+        restoreFocus.current = false;
+        menuButtonRef.current?.focus();
+      }
+      return;
+    }
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     closeButtonRef.current?.focus();
+    function focusable() {
+      const menu = menuRef.current;
+      if (!menu) return [];
+      return [...menu.querySelectorAll<HTMLElement>("a[href], button:not([disabled])")];
+    }
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        event.preventDefault();
+        restoreFocus.current = true;
         setMenuOpen(false);
-        menuButtonRef.current?.focus();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (!menuRef.current?.contains(active)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first)?.focus();
+        return;
+      }
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first?.focus();
       }
     }
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [menuOpen]);
 
-  function closeMenu(restoreFocus: boolean) {
+  function closeMenu(restore: boolean) {
+    restoreFocus.current = restore;
     setMenuOpen(false);
-    if (restoreFocus) menuButtonRef.current?.focus();
   }
 
   async function logout() {
@@ -117,7 +168,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[var(--bg)] p-4 md:p-8">
-      <header className="flex flex-wrap items-center gap-4 rounded-2xl bg-[var(--surface)] px-5 py-5 md:px-8 md:py-8">
+      <header className="flex flex-wrap items-center gap-4 rounded-2xl bg-[var(--surface)] px-5 py-5 md:px-8 md:py-8" inert={menuOpen ? true : undefined}>
         <p className="text-2xl text-[var(--brand)]">Vitrio</p>
         <p className="hidden text-sm text-[var(--muted)] sm:block">
           {storeName}
@@ -144,11 +195,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </header>
       <div className="mt-4 flex flex-col items-start gap-4 lg:flex-row">
         {menuOpen ? (
-          <button type="button" className="fixed inset-0 z-20 bg-[var(--ink)]/30 lg:hidden" aria-label="Fechar menu" onClick={() => closeMenu(true)} />
+          <button type="button" tabIndex={-1} className="fixed inset-0 z-20 bg-[var(--ink)]/30 lg:hidden" aria-label="Fechar menu" onClick={() => closeMenu(true)} />
         ) : null}
         <aside
+          ref={menuRef}
           id="menu-painel"
-          className={`w-full flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6 lg:static lg:flex lg:w-[220px] lg:shrink-0 lg:shadow-none ${menuOpen ? "fixed inset-x-4 top-28 z-30 flex max-h-[70vh] overflow-auto shadow-lg" : "hidden"}`}
+          role={menuOpen ? "dialog" : undefined}
+          aria-modal={menuOpen ? true : undefined}
+          aria-label="Gestão da loja"
+          className={`w-full flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6 lg:static lg:flex lg:w-[220px] lg:shrink-0 lg:overflow-visible lg:shadow-none ${menuOpen ? "fixed inset-x-4 top-28 z-30 flex max-h-[70vh] overflow-auto shadow-lg" : "hidden"}`}
         >
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Gestão da loja</p>
@@ -164,7 +219,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
         </aside>
-        <div className="min-w-0 w-full flex-1">{children}</div>
+        <div className="min-w-0 w-full flex-1" inert={menuOpen ? true : undefined}>{children}</div>
       </div>
     </div>
   );
