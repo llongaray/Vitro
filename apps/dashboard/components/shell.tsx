@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { api } from "@/lib/api";
 import { NotificationBell } from "@/components/notification-bell";
@@ -51,6 +51,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [storeName, setStoreName] = useState("Loja");
   const [accountName, setAccountName] = useState("Minha conta");
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -82,6 +84,24 @@ export function Shell({ children }: { children: React.ReactNode }) {
     };
   }, [router]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    closeButtonRef.current?.focus();
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
+  function closeMenu(restoreFocus: boolean) {
+    setMenuOpen(false);
+    if (restoreFocus) menuButtonRef.current?.focus();
+  }
+
   async function logout() {
     await api("/auth/logout", { method: "POST" });
     router.replace("/login");
@@ -107,8 +127,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <div className="ml-auto flex items-center gap-4 text-sm text-[var(--muted)]">
           <NotificationBell />
           <span className="hidden md:inline">{accountName}</span>
-          <button type="button" className="lg:hidden" aria-expanded={menuOpen} aria-controls="menu-painel" onClick={() => setMenuOpen((value) => !value)}>
-            Menu
+          <button
+            ref={menuButtonRef}
+            type="button"
+            className="inline-flex min-h-11 items-center rounded-[10px] px-3 lg:hidden"
+            aria-expanded={menuOpen}
+            aria-controls="menu-painel"
+            onClick={() => (menuOpen ? closeMenu(false) : setMenuOpen(true))}
+          >
+            {menuOpen ? "Fechar" : "Menu"}
           </button>
           <button type="button" onClick={logout}>
             Sair
@@ -116,13 +143,26 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <div className="mt-4 flex flex-col items-start gap-4 lg:flex-row">
-        <aside id="menu-painel" className={`${menuOpen ? "flex" : "hidden"} w-full flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6 lg:flex lg:w-[220px] lg:shrink-0`}>
-          <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Gestão da loja</p>
-          {visible.map((link) => (
-            <Link key={link.href} href={link.href} data-testid={link.testid} className={`text-base ${itemActive(link.href) ? "text-[var(--brand)]" : "text-[var(--ink)]"}`} onClick={() => setMenuOpen(false)}>
-              {link.label}
-            </Link>
-          ))}
+        {menuOpen ? (
+          <button type="button" className="fixed inset-0 z-20 bg-[var(--ink)]/30 lg:hidden" aria-label="Fechar menu" onClick={() => closeMenu(true)} />
+        ) : null}
+        <aside
+          id="menu-painel"
+          className={`w-full flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6 lg:static lg:flex lg:w-[220px] lg:shrink-0 lg:shadow-none ${menuOpen ? "fixed inset-x-4 top-28 z-30 flex max-h-[70vh] overflow-auto shadow-lg" : "hidden"}`}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Gestão da loja</p>
+            <button ref={closeButtonRef} type="button" className="min-h-11 px-2 lg:hidden" onClick={() => closeMenu(true)}>
+              Fechar
+            </button>
+          </div>
+          <nav className="flex flex-col gap-4" aria-label="Gestão da loja">
+            {visible.map((link) => (
+              <Link key={link.href} href={link.href} data-testid={link.testid} className={`text-base ${itemActive(link.href) ? "text-[var(--brand)]" : "text-[var(--ink)]"}`} onClick={() => setMenuOpen(false)}>
+                {link.label}
+              </Link>
+            ))}
+          </nav>
         </aside>
         <div className="min-w-0 w-full flex-1">{children}</div>
       </div>
