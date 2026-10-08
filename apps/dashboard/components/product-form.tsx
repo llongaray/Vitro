@@ -2,13 +2,14 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button, Input, Notice } from "@vitrio/ui";
 import { SeoPreview } from "@/components/seo-preview";
 import { api, readError } from "@/lib/api";
+import { claimSubmit, publishFlag, releaseSubmit } from "@/lib/panel-guards";
 
 const schema = z.object({
   name: z.string().min(1, "Informe o nome"),
@@ -34,36 +35,48 @@ export function ProductForm({ productId }: { productId?: string }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [images, setImages] = useState<{ id: string; url: string | null; alt: string | null }[]>([]);
   const [saved, setSaved] = useState<"draft" | "published" | null>(null);
+  const [sending, setSending] = useState(false);
+  const submitLock = useRef({ busy: false });
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", slug: "", short_description: "", description: "", price: "", stock_display: "", show_price: "inherit", category_id: "", publish: true, is_clearance: false, clearance_label: "", seo_title: "", seo_description: "" },
   });
 
   useEffect(() => {
-    api("/categories").then(async (response) => {
-      if (response.ok) setCategories(await response.json());
-    });
-    if (!productId) return;
-    api(`/products/${productId}`).then(async (response) => {
-      if (!response.ok) return;
-      const product = await response.json();
-      form.reset({
-        name: product.name,
-        slug: product.slug ?? "",
-        short_description: product.short_description ?? "",
-        description: product.description ?? "",
-        price: product.price ?? "",
-        stock_display: product.stock_display ?? "",
-        show_price: product.show_price,
-        category_id: product.category_id ?? "",
-        publish: product.published,
-        is_clearance: product.is_clearance,
-        clearance_label: product.clearance_label ?? "",
-        seo_title: product.seo_title ?? "",
-        seo_description: product.seo_description ?? "",
-      });
-      setImages(product.images);
-    });
+    let active = true;
+    api("/categories")
+      .then(async (response) => {
+        if (active && response.ok) setCategories(await response.json());
+      })
+      .catch(() => undefined);
+    if (!productId) return () => {
+      active = false;
+    };
+    api(`/products/${productId}`)
+      .then(async (response) => {
+        if (!active || !response.ok) return;
+        const product = await response.json();
+        form.reset({
+          name: product.name,
+          slug: product.slug ?? "",
+          short_description: product.short_description ?? "",
+          description: product.description ?? "",
+          price: product.price ?? "",
+          stock_display: product.stock_display ?? "",
+          show_price: product.show_price,
+          category_id: product.category_id ?? "",
+          publish: product.published,
+          is_clearance: product.is_clearance,
+          clearance_label: product.clearance_label ?? "",
+          seo_title: product.seo_title ?? "",
+          seo_description: product.seo_description ?? "",
+        });
+        setImages(product.images ?? []);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
   }, [productId, form]);
 
   async function onSubmit(values: FormValues) {
@@ -97,11 +110,27 @@ export function ProductForm({ productId }: { productId?: string }) {
     if (!productId) router.replace(`/produtos/${savedProduct.id}`);
   }
 
-  async function saveDraft() {
-    form.setValue("publish", false);
-    const valid = await form.trigger();
-    if (!valid) return;
-    await onSubmit({ ...form.getValues(), publish: false });
+  async function guarded(task: () => Promise<void>) {
+    if (!claimSubmit(submitLock.current)) return;
+    setSending(true);
+    try {
+      await task();
+    } catch {
+      setSaved(null);
+      form.setError("root", { message: "A conexão falhou. Tente de novo." });
+    } finally {
+      releaseSubmit(submitLock.current);
+      setSending(false);
+    }
+  }
+
+  function saveDraft() {
+    void guarded(async () => {
+      form.setValue("publish", false);
+      const valid = await form.trigger();
+      if (!valid) return;
+      await onSubmit({ ...form.getValues(), publish: publishFlag("draft", false) });
+    });
   }
 
   async function upload(file: File) {
@@ -120,7 +149,18 @@ export function ProductForm({ productId }: { productId?: string }) {
   const published = form.watch("publish");
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        void guarded(async () => {
+          await form.handleSubmit(async (values) => {
+            await onSubmit({ ...values, publish: publishFlag("save", values.publish) });
+          })();
+        });
+      }}
+      className="flex flex-col gap-4"
+      aria-busy={sending}
+    >
       <section className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <h2 className="text-[22px]">Dados do produto</h2>
           <label>
@@ -224,11 +264,11 @@ export function ProductForm({ productId }: { productId?: string }) {
         />
       ) : null}
       <div className="flex flex-wrap gap-4">
-        <Button type="button" tone="secondary" className="w-[190px]" onClick={saveDraft}>
-          Salvar rascunho
+        <Button type="button" tone="secondary" className="w-[190px]" onClick={saveDraft} disabled={sending}>
+          {sending ? "Salvando..." : "Salvar rascunho"}
         </Button>
-        <Button data-testid="product-submit" type="submit" className="w-[190px]" disabled={form.formState.isSubmitting}>
-          {published ? "Publicar produto" : "Salvar sem publicar"}
+        <Button data-testid="product-submit" type="submit" className="w-[190px]" disabled={sending}>
+          {sending ? "Salvando..." : published ? "Publicar produto" : "Salvar sem publicar"}
         </Button>
       </div>
     </form>
