@@ -1,0 +1,78 @@
+# Dependências
+node_modules/
+.pnp.*
+.pnpm-store/
+
+# Next.js e build do front
+.next/
+out/
+.turbo/
+dist/
+build/
+*.tsbuildinfo
+
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage/
+apps/api/.test-storage/
+
+# Segredos e ambiente local
+# O modelo versionado é só o .env.example, com placeholders.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+id_rsa
+id_ed25519
+credentials.json
+secrets.json
+*.secret
+
+# Uploads e dados gerados em runtime
+storage/tenants/
+
+# Testes e relatórios
+playwright-report/
+test-results/
+blob-report/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker local
+docker-compose.override.yml
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Editores
+.idea/
+*.swp
+*.swo
+*~
