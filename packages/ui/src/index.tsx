@@ -1,4 +1,4 @@
-import { ButtonHTMLAttributes, InputHTMLAttributes } from "react";
+import { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { tone?: "primary" | "secondary" };
 
@@ -12,6 +12,23 @@ export function Button({ className = "", tone = "primary", ...props }: ButtonPro
       className={`inline-flex min-h-11 items-center justify-center rounded-[10px] px-3.5 py-3.5 text-[15px] font-normal transition disabled:cursor-not-allowed disabled:opacity-50 ${tones[tone]} ${className}`}
       {...props}
     />
+  );
+}
+
+export function Notice({ tone = "empty", title, text, action }: { tone?: "empty" | "error" | "success" | "loading"; title: string; text?: string; action?: ReactNode }) {
+  const tones = {
+    empty: "bg-[var(--surface,white)] text-[var(--ink,#1c2924)]",
+    error: "bg-[var(--surface,white)] text-[var(--ink,#1c2924)]",
+    success: "bg-[var(--soft,#e5ede5)] text-[var(--ink,#1c2924)]",
+    loading: "bg-[var(--surface,white)] text-[var(--muted,#64736b)]",
+  };
+  return (
+    <div className={`rounded-2xl px-6 py-6 ${tones[tone]}`} role={tone === "error" ? "alert" : "status"}>
+      {tone === "loading" ? <div className="mb-4 h-24 animate-pulse rounded-2xl bg-[var(--image,#e4dcd0)]" /> : null}
+      <p className="text-lg">{title}</p>
+      {text ? <p className="mt-2 text-sm text-[var(--muted,#64736b)]">{text}</p> : null}
+      {action ? <div className="mt-4">{action}</div> : null}
+    </div>
   );
 }
 
