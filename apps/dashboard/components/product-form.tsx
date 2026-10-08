@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Button, Input } from "@vitrio/ui";
+import { Button, Input, Notice } from "@vitrio/ui";
 import { SeoPreview } from "@/components/seo-preview";
 import { api, readError } from "@/lib/api";
 
@@ -33,6 +33,7 @@ export function ProductForm({ productId }: { productId?: string }) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [images, setImages] = useState<{ id: string; url: string | null; alt: string | null }[]>([]);
+  const [saved, setSaved] = useState<"draft" | "published" | null>(null);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", slug: "", short_description: "", description: "", price: "", stock_display: "", show_price: "inherit", category_id: "", publish: true, is_clearance: false, clearance_label: "", seo_title: "", seo_description: "" },
@@ -87,11 +88,20 @@ export function ProductForm({ productId }: { productId?: string }) {
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
+      setSaved(null);
       form.setError("root", { message: await readError(response) });
       return;
     }
-    const saved = await response.json();
-    if (!productId) router.replace(`/produtos/${saved.id}`);
+    const savedProduct = await response.json();
+    setSaved(values.publish ? "published" : "draft");
+    if (!productId) router.replace(`/produtos/${savedProduct.id}`);
+  }
+
+  async function saveDraft() {
+    form.setValue("publish", false);
+    const valid = await form.trigger();
+    if (!valid) return;
+    await onSubmit({ ...form.getValues(), publish: false });
   }
 
   async function upload(file: File) {
@@ -194,32 +204,31 @@ export function ProductForm({ productId }: { productId?: string }) {
             {images.map((image) => (image.url ? <img key={image.id} src={image.url} alt={image.alt ?? ""} className="h-24 w-24 rounded-2xl object-cover" /> : null))}
           </div>
           <h2 className="text-[22px]">Publicação</h2>
-          <p className="text-[15px] text-[var(--muted)]">Status: {published ? "Publicado" : "Rascunho"}</p>
+          <p className="text-[15px] text-[var(--muted)]">Status: {published ? "Visível no catálogo" : "Rascunho, fora do catálogo"}</p>
           <label className="row text-[15px] text-[var(--muted)]">
             <input data-testid="product-publish" type="checkbox" {...form.register("publish")} />
             Visível no catálogo
           </label>
+          <p className="text-[13px] text-[var(--muted)]">
+            {published
+              ? "Salvar publica o produto no catálogo."
+              : "Com esta opção desmarcada, salvar mantém o produto como rascunho."}
+          </p>
         </section>
-      {form.formState.errors.root ? <p className="text-sm text-red-700">{form.formState.errors.root.message}</p> : null}
+      {form.formState.errors.root ? <p className="text-sm text-red-700" role="alert">{form.formState.errors.root.message}</p> : null}
+      {saved ? (
+        <Notice
+          tone="success"
+          title={saved === "published" ? "Produto publicado no catálogo" : "Produto salvo como rascunho"}
+          text={saved === "published" ? "Ele aparece na vitrine." : "Ele fica fora do catálogo até ser marcado como visível."}
+        />
+      ) : null}
       <div className="flex flex-wrap gap-4">
-        <Button
-          type="button"
-          tone="secondary"
-          className="w-[190px]"
-          onClick={() => {
-            form.setValue("publish", false);
-            void form.handleSubmit(onSubmit)();
-          }}
-        >
+        <Button type="button" tone="secondary" className="w-[190px]" onClick={saveDraft}>
           Salvar rascunho
         </Button>
-        <Button
-          data-testid="product-submit"
-          type="submit"
-          className="w-[190px]"
-          onClick={() => form.setValue("publish", true)}
-        >
-          Publicar produto
+        <Button data-testid="product-submit" type="submit" className="w-[190px]" disabled={form.formState.isSubmitting}>
+          {published ? "Publicar produto" : "Salvar sem publicar"}
         </Button>
       </div>
     </form>
