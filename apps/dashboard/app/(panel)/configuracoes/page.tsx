@@ -64,9 +64,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <main>
-      <h1 className="text-3xl font-semibold">Configurações</h1>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 grid max-w-xl gap-4">
+    <main className="flex flex-col gap-4">
+      <h1 className="text-[40px] font-normal leading-none">Configurações</h1>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <label>
           Nome comercial
           <Input {...form.register("trade_name")} />
@@ -123,7 +123,7 @@ export default function SettingsPage() {
           <input type="checkbox" {...form.register("indexing_enabled")} /> Permitir indexação
         </label>
         {form.formState.errors.root ? <p data-testid="settings-error" className="text-sm text-red-700">{form.formState.errors.root.message}</p> : null}
-        <button data-testid="settings-submit" className="w-fit rounded-full bg-stone-900 px-4 py-2 text-sm text-white" type="submit">
+        <button data-testid="settings-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Salvar
         </button>
       </form>
@@ -190,7 +190,7 @@ function DomainsPanel() {
           Hostname
           <Input data-testid="domain-hostname" value={hostname} onChange={(event) => setHostname(event.target.value)} placeholder="www.minhaloja.com.br" />
         </label>
-        <button data-testid="domain-submit" className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white" type="submit">
+        <button data-testid="domain-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Adicionar
         </button>
       </form>
