@@ -104,17 +104,16 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-14">
-      <div className="text-center">
-        <h1 className="font-serif text-5xl">{done ? "Cadastro feito" : "Cadastro"}</h1>
-        <p className="mx-auto mt-3 max-w-xl text-stone-600">
+    <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 px-5 py-8 md:px-16 md:py-16">
+      <p className="text-[13px] text-[var(--muted)]">Início / Cadastro</p>
+      <h1 className="font-serif text-5xl leading-none">{done ? "Recebemos seu cadastro" : "Cadastro"}</h1>
+        <p className="max-w-xl text-[var(--muted)]">
           {done
             ? "A loja recebeu seu contato. Se houver um código, ele aparece abaixo."
             : "Deixe seu contato para receber ofertas, novidades da loja e o cupom de cadastro, quando a loja tiver um."}
         </p>
-      </div>
-      <div className="mt-8 overflow-hidden rounded-[1.75rem] bg-white shadow-[0_20px_60px_-30px_rgba(28,25,23,0.35)] ring-1 ring-stone-200/70 md:grid md:aspect-[2/1] md:grid-cols-2">
-        <section className="relative min-h-0 bg-[#f9eee4] bg-[url('/cadastro-presente.png')] bg-[length:auto_100%] bg-right bg-no-repeat md:h-full">
+      <div className="grid items-start gap-4 overflow-hidden rounded-2xl lg:grid-cols-2">
+        <section className="rounded-2xl bg-[var(--soft)] p-6">
           <div className="relative z-10 px-6 py-6 md:max-w-[15.5rem]">
             <p className="text-[10px] uppercase tracking-[0.18em] text-stone-500">Vantagens de se cadastrar</p>
             <div className="mt-2 h-px w-16 bg-stone-300/80" />
@@ -134,7 +133,7 @@ export default function SignupPage() {
             </ul>
           </div>
         </section>
-        <section className="flex min-h-0 flex-col justify-center px-6 py-6 md:h-full">
+        <section className="flex flex-col justify-center rounded-2xl bg-[var(--surface)] p-6">
           {done ? (
             <div>
               <h2 className="font-serif text-3xl">Pronto</h2>
