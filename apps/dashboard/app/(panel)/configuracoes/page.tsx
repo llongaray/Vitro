@@ -5,7 +5,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Input } from "@vitrio/ui";
+import { Input, Notice } from "@vitrio/ui";
 import { SeoPreview } from "@/components/seo-preview";
 import { api, readError } from "@/lib/api";
 
@@ -28,6 +28,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function SettingsPage() {
+  const [saved, setSaved] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { trade_name: "", show_prices: false, indexing_enabled: true },
@@ -60,12 +61,19 @@ export default function SettingsPage() {
       method: "PATCH",
       body: JSON.stringify({ ...values, name: values.trade_name, site_name: values.trade_name }),
     });
-    if (!response.ok) form.setError("root", { message: await readError(response) });
+    if (!response.ok) {
+      setSaved(false);
+      form.setError("root", { message: await readError(response) });
+      return;
+    }
+    form.clearErrors("root");
+    setSaved(true);
   }
 
   return (
     <main className="flex flex-col gap-4">
       <h1 className="text-[40px] font-normal leading-none">Configurações</h1>
+      <p className="text-base text-[var(--muted)]">Nome, cores e dados que a vitrine mostra para esta loja.</p>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <label>
           Nome comercial
@@ -122,7 +130,8 @@ export default function SettingsPage() {
         <label className="flex items-center gap-2 font-normal">
           <input type="checkbox" {...form.register("indexing_enabled")} /> Permitir indexação
         </label>
-        {form.formState.errors.root ? <p data-testid="settings-error" className="text-sm text-red-700">{form.formState.errors.root.message}</p> : null}
+        {form.formState.errors.root ? <p data-testid="settings-error" className="text-sm text-red-700" role="alert">{form.formState.errors.root.message}</p> : null}
+        {saved ? <Notice tone="success" title="Configurações salvas" text="A vitrine passa a usar estes dados." /> : null}
         <button data-testid="settings-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Salvar
         </button>
