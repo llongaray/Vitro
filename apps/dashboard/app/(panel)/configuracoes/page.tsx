@@ -1,13 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Input, Notice } from "@vitrio/ui";
 import { SeoPreview } from "@/components/seo-preview";
 import { api, readError } from "@/lib/api";
+import { claimSubmit, releaseSubmit, runPanelLoad } from "@/lib/panel-guards";
 
 const schema = z.object({
   trade_name: z.string().min(2),
@@ -29,14 +30,20 @@ type FormValues = z.infer<typeof schema>;
 
 export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [sending, setSending] = useState(false);
+  const submitLock = useRef({ busy: false });
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { trade_name: "", show_prices: false, indexing_enabled: true },
   });
 
-  useEffect(() => {
-    api("/settings").then(async (response) => {
-      if (!response.ok) return;
+  async function load() {
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const response = await api("/settings");
+      if (!response.ok) throw new Error(await readError(response));
       const data = await response.json();
       form.reset({
         trade_name: data.trade_name ?? "",
@@ -48,15 +55,23 @@ export default function SettingsPage() {
         business_hours: data.business_hours ?? "",
         city: data.city ?? "",
         state: data.state ?? "",
-        show_prices: data.show_prices,
+        show_prices: Boolean(data.show_prices),
         seo_title: data.seo_title ?? "",
         seo_description: data.seo_description ?? "",
-        indexing_enabled: data.indexing_enabled,
+        indexing_enabled: data.indexing_enabled !== false,
       });
+      setReady(true);
     });
+  }
+
+  useEffect(() => {
+    void load();
   }, [form]);
 
   async function onSubmit(values: FormValues) {
+    if (!ready || !claimSubmit(submitLock.current)) return;
+    setSending(true);
+    try {
     const response = await api("/settings", {
       method: "PATCH",
       body: JSON.stringify({ ...values, name: values.trade_name, site_name: values.trade_name }),
@@ -68,13 +83,33 @@ export default function SettingsPage() {
     }
     form.clearErrors("root");
     setSaved(true);
+    } catch {
+      setSaved(false);
+      form.setError("root", { message: "A conexão falhou. Tente de novo." });
+    } finally {
+      releaseSubmit(submitLock.current);
+      setSending(false);
+    }
   }
 
   return (
     <main className="flex flex-col gap-4">
       <h1 className="text-[40px] font-normal leading-none">Configurações</h1>
       <p className="text-base text-[var(--muted)]">Nome, cores e dados que a vitrine mostra para esta loja.</p>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
+      {loading ? <Notice tone="loading" title="Carregando" text="Buscando as configurações da loja." /> : null}
+      {loadError ? (
+        <Notice
+          tone="error"
+          title="Não foi possível carregar"
+          text={loadError}
+          action={
+            <button type="button" className="inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" onClick={() => void load()}>
+              Tentar de novo
+            </button>
+          }
+        />
+      ) : null}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6" aria-busy={sending}>
         <label>
           Nome comercial
           <Input {...form.register("trade_name")} />
@@ -132,8 +167,8 @@ export default function SettingsPage() {
         </label>
         {form.formState.errors.root ? <p data-testid="settings-error" className="text-sm text-red-700" role="alert">{form.formState.errors.root.message}</p> : null}
         {saved ? <Notice tone="success" title="Configurações salvas" text="A vitrine passa a usar estes dados." /> : null}
-        <button data-testid="settings-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
-          Salvar
+        <button data-testid="settings-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)] disabled:opacity-50" type="submit" disabled={!ready || loading || sending}>
+          {sending ? "Salvando..." : "Salvar"}
         </button>
       </form>
       <DomainsPanel />
@@ -154,38 +189,70 @@ function DomainsPanel() {
   const [rows, setRows] = useState<DomainRow[]>([]);
   const [hostname, setHostname] = useState("");
   const [message, setMessage] = useState("");
+  const [messageOk, setMessageOk] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [busy, setBusy] = useState("");
+  const lock = useRef({ busy: false });
 
   async function load() {
-    const response = await api("/domains");
-    if (response.ok) setRows(await response.json());
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const response = await api("/domains");
+      if (!response.ok) throw new Error(await readError(response));
+      setRows(await response.json());
+    });
   }
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
-  async function add(event: FormEvent) {
-    event.preventDefault();
-    const response = await api("/domains", { method: "POST", body: JSON.stringify({ hostname }) });
-    if (!response.ok) {
-      setMessage(await readError(response));
-      return;
+  async function run(action: string, task: () => Promise<void>) {
+    if (!claimSubmit(lock.current)) return;
+    setBusy(action);
+    try {
+      await task();
+    } catch {
+      setMessageOk(false);
+      setMessage("A conexão falhou. Tente de novo.");
+    } finally {
+      releaseSubmit(lock.current);
+      setBusy("");
     }
-    setHostname("");
-    setMessage("");
-    await load();
   }
 
-  async function verify(id: string) {
-    const response = await api(`/domains/${id}/verify`, { method: "POST" });
-    setMessage(response.ok ? "Domínio verificado." : await readError(response));
-    await load();
+  function add(event: FormEvent) {
+    event.preventDefault();
+    void run("add", async () => {
+      const response = await api("/domains", { method: "POST", body: JSON.stringify({ hostname }) });
+      if (!response.ok) {
+        setMessageOk(false);
+        setMessage(await readError(response));
+        return;
+      }
+      setHostname("");
+      setMessageOk(true);
+      setMessage("Domínio adicionado.");
+      await load();
+    });
   }
 
-  async function primary(id: string) {
-    const response = await api(`/domains/${id}/primary`, { method: "POST" });
-    setMessage(response.ok ? "Domínio definido como primário." : await readError(response));
-    await load();
+  function verify(id: string) {
+    void run(`verify:${id}`, async () => {
+      const response = await api(`/domains/${id}/verify`, { method: "POST" });
+      setMessageOk(response.ok);
+      setMessage(response.ok ? "Domínio verificado." : await readError(response));
+      await load();
+    });
+  }
+
+  function primary(id: string) {
+    void run(`primary:${id}`, async () => {
+      const response = await api(`/domains/${id}/primary`, { method: "POST" });
+      setMessageOk(response.ok);
+      setMessage(response.ok ? "Domínio definido como primário." : await readError(response));
+      await load();
+    });
   }
 
   return (
@@ -199,11 +266,25 @@ function DomainsPanel() {
           Hostname
           <Input data-testid="domain-hostname" value={hostname} onChange={(event) => setHostname(event.target.value)} placeholder="www.minhaloja.com.br" />
         </label>
-        <button data-testid="domain-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
-          Adicionar
+        <button data-testid="domain-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)] disabled:opacity-50" type="submit" disabled={Boolean(busy)}>
+          {busy === "add" ? "Adicionando..." : "Adicionar"}
         </button>
       </form>
-      {message ? <p className="text-sm text-stone-700">{message}</p> : null}
+      {loading ? <Notice tone="loading" title="Carregando" text="Buscando os domínios da loja." /> : null}
+      {loadError ? (
+        <Notice
+          tone="error"
+          title="Não foi possível carregar"
+          text={loadError}
+          action={
+            <button type="button" className="inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" onClick={() => void load()}>
+              Tentar de novo
+            </button>
+          }
+        />
+      ) : null}
+      {!loading && !loadError && rows.length === 0 ? <Notice tone="empty" title="Nenhum domínio adicional" text="O endereço atual da loja continua valendo." /> : null}
+      {message ? <p className={`text-sm ${messageOk ? "text-stone-700" : "text-red-700"}`} role={messageOk ? "status" : "alert"}>{message}</p> : null}
       <ul className="space-y-3">
         {rows.map((row) => (
           <li key={row.id} className="rounded-2xl bg-white p-4 text-sm ring-1 ring-stone-200">
@@ -215,10 +296,10 @@ function DomainsPanel() {
               </p>
             ) : null}
             <div className="mt-3 flex gap-2">
-              <button type="button" data-testid="domain-verify" className="rounded-full bg-stone-100 px-3 py-1" onClick={() => verify(row.id)}>
-                Verificar
+              <button type="button" data-testid="domain-verify" className="rounded-full bg-stone-100 px-3 py-1 disabled:opacity-50" onClick={() => verify(row.id)} disabled={Boolean(busy)}>
+                {busy === `verify:${row.id}` ? "Aguarde..." : "Verificar"}
               </button>
-              <button type="button" data-testid="domain-primary" className="rounded-full bg-stone-100 px-3 py-1" onClick={() => primary(row.id)}>
+              <button type="button" data-testid="domain-primary" className="rounded-full bg-stone-100 px-3 py-1 disabled:opacity-50" onClick={() => primary(row.id)} disabled={Boolean(busy)}>
                 Tornar primário
               </button>
             </div>
