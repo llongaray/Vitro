@@ -1,0 +1,30 @@
+---
+description: Branches tst, hml e main. Impede commit ou push de trabalho não testado na main.
+alwaysApply: true
+---
+
+# Branches
+
+Fluxo: `tst` → `hml` → `main`. Cada commit altera um arquivo só.
+
+| Branch | Quando |
+| --- | --- |
+| `tst-v.X` | ainda precisa de teste |
+| `hml-v.X` | já testado e ainda não entra na `main` |
+| `main` | já funciona, sem erro, e pode ser usado |
+
+`X` é a versão, como `1.5.0`. Nomes livres (`template-figma`, `feature/...`) não existem neste repositório.
+
+Na `tst` e na `hml`, a mensagem é `prefixo versão-do-arquivo branch descrição`:
+
+```text
+add 1.5.0 tst-v.1.5.0 descrição do que entrou
+fix 1.5.1 tst-v.1.5.0 descrição da correção
+remov 1.5.2 hml-v.1.5.0 descrição do que saiu
+```
+
+Prefixos: `add`, `fix`, `remov`.
+
+Na `main`, a mensagem é só a versão daquele arquivo: `1.5.0`. Isso só acontece depois da `hml`.
+
+Não faça commit nem push na `main` de trabalho inacabado ou não testado. Não use `--force` na `main`.
