@@ -19,10 +19,10 @@ export default function SeoPage() {
   }, []);
 
   return (
-    <main>
-      <h1 className="text-3xl font-semibold">SEO</h1>
+    <main className="flex flex-col gap-4">
+      <h1 className="text-[40px] font-normal leading-none">SEO</h1>
       <p className="mt-2 max-w-2xl text-stone-600">Checklist técnico da vitrine. Não indica posição no Google.</p>
-      <ul className="mt-6 divide-y rounded-2xl bg-white ring-1 ring-stone-200">
+      <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item, index) => (
           <li key={`${item.entity}-${item.label}-${index}`} className="flex items-center justify-between px-4 py-3 text-sm">
             <span>
