@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { PanelFeedback, PanelPage } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 type Customer = { id: string; name: string; email: string; phone: string | null; accepted_terms: boolean };
 
@@ -13,15 +14,11 @@ export default function CustomersPage() {
   const [loadError, setLoadError] = useState("");
 
   async function load() {
-    setLoading(true);
-    setLoadError("");
-    const response = await api("/customers");
-    setLoading(false);
-    if (!response.ok) {
-      setLoadError(await readError(response));
-      return;
-    }
-    setItems(await response.json());
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const response = await api("/customers");
+      if (!response.ok) throw new Error(await readError(response));
+      setItems(await response.json());
+    });
   }
 
   useEffect(() => {
