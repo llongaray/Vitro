@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Input, Notice } from "@vitrio/ui";
 import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 const schema = z.object({ title: z.string().min(1), url: z.string().optional() });
 type Banner = { id: string; title: string; active: boolean; desktop_url: string | null };
@@ -21,15 +22,11 @@ export default function BannersPage() {
   const form = useForm({ resolver: zodResolver(schema), defaultValues: { title: "", url: "" } });
 
   async function load() {
-    setLoading(true);
-    setLoadError("");
-    const response = await api("/banners");
-    setLoading(false);
-    if (!response.ok) {
-      setLoadError(await readError(response));
-      return;
-    }
-    setItems(await response.json());
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const response = await api("/banners");
+      if (!response.ok) throw new Error(await readError(response));
+      setItems(await response.json());
+    });
   }
 
   useEffect(() => {
