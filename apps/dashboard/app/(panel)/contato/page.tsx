@@ -40,10 +40,10 @@ export default function ContactPage() {
   }
 
   return (
-    <main>
-      <h1 className="text-3xl font-semibold">Contato</h1>
+    <main className="flex flex-col gap-4">
+      <h1 className="text-[40px] font-normal leading-none">Contato</h1>
       <p className="mt-2 max-w-xl text-stone-600">O botão Tenho interesse usa este canal. Use {"{product_name}"} e {"{product_url}"} na mensagem.</p>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 grid max-w-xl gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <label>
           Canal
           <select className="rounded-xl border border-stone-300 px-3 py-2" {...form.register("contact_type")}>
@@ -63,7 +63,7 @@ export default function ContactPage() {
           <textarea className="min-h-28 rounded-xl border border-stone-300 px-3 py-2 text-sm" {...form.register("contact_message_template")} />
         </label>
         {form.formState.errors.root ? <p className="text-sm text-red-700">{form.formState.errors.root.message}</p> : null}
-        <button className="w-fit rounded-full bg-stone-900 px-4 py-2 text-sm text-white" type="submit">
+        <button className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Salvar contato
         </button>
       </form>
