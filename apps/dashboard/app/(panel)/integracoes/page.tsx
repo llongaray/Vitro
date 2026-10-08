@@ -5,6 +5,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Input, Notice } from "@vitrio/ui";
 import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 const providers = [
   { id: "ga4", label: "Google Analytics 4" },
@@ -28,24 +29,19 @@ export default function IntegrationsPage() {
   const [loadError, setLoadError] = useState("");
 
   async function load() {
-    setLoading(true);
-    setLoadError("");
-    const [integrations, apiKeys] = await Promise.all([api("/integrations"), api("/api-keys")]);
-    setLoading(false);
-    if (!integrations.ok) {
-      setLoadError(await readError(integrations));
-      return;
-    }
-    if (integrations.ok) {
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const [integrations, apiKeys] = await Promise.all([api("/integrations"), api("/api-keys")]);
+      if (!integrations.ok) throw new Error(await readError(integrations));
       const data = (await integrations.json()) as Integration[];
       setRows(data);
       setDrafts(Object.fromEntries(data.map((row) => [row.provider, { public_id: row.public_id, enabled: row.enabled }])));
-    }
-    if (apiKeys.ok) setKeys(await apiKeys.json());
+      if (!apiKeys.ok) throw new Error(await readError(apiKeys));
+      setKeys(await apiKeys.json());
+    });
   }
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   async function save(provider: string) {
