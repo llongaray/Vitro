@@ -37,12 +37,12 @@ export default function ImportPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-8">
-      <h1 className="font-serif text-4xl">Importar e exportar</h1>
+    <main className="flex flex-col gap-4">
+      <h1 className="text-[40px] font-normal leading-none">Importar e exportar</h1>
       <form className="space-y-3" onSubmit={(event) => send(event, "/imports/products")}>
         <h2 className="text-lg">Produtos</h2>
         <input data-testid="import-file" name="file" type="file" accept=".csv,text/csv" required className="block text-sm" />
-        <button data-testid="import-submit" className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white" type="submit">
+        <button data-testid="import-submit" className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Importar produtos
         </button>
       </form>
@@ -50,7 +50,7 @@ export default function ImportPage() {
         <h2 className="text-lg">Clientes</h2>
         <p className="text-sm text-stone-600">Linha sem accepted_terms=true é rejeitada e não gera cupom.</p>
         <input name="file" type="file" accept=".csv,text/csv" required className="block text-sm" />
-        <button className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white" type="submit">
+        <button className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Importar clientes
         </button>
       </form>
