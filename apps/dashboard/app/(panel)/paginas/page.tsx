@@ -9,6 +9,7 @@ import { Input, Notice } from "@vitrio/ui";
 import { PanelFeedback } from "@/components/panel-page";
 import { SeoPreview } from "@/components/seo-preview";
 import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 const schema = z.object({
   title: z.string().min(1),
@@ -26,15 +27,11 @@ export default function PagesPage() {
   const form = useForm({ resolver: zodResolver(schema), defaultValues: { title: "", content: "", kind: "custom" as const, published: true } });
 
   async function load() {
-    setLoading(true);
-    setLoadError("");
-    const response = await api("/pages");
-    setLoading(false);
-    if (!response.ok) {
-      setLoadError(await readError(response));
-      return;
-    }
-    setItems(await response.json());
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const response = await api("/pages");
+      if (!response.ok) throw new Error(await readError(response));
+      setItems(await response.json());
+    });
   }
 
   useEffect(() => {
