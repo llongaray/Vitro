@@ -4,6 +4,13 @@
 
 :root {
   color-scheme: light;
+  --bg: #f4efe7;
+  --surface: #ffffff;
+  --ink: #1c2924;
+  --muted: #64736b;
+  --soft: #e5ede5;
+  --image: #e4dcd0;
+  --brand: var(--store, #245b45);
 }
 
 html,
@@ -12,8 +19,8 @@ body {
 }
 
 body {
-  background: #f4efe7;
-  color: #1c1917;
+  background: var(--bg);
+  color: var(--ink);
 }
 
 .font-editorial {

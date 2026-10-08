@@ -43,8 +43,8 @@ export default function HomePage() {
 
   return (
     <main data-testid="dashboard-home">
-      <h1 className="text-3xl font-semibold">Início</h1>
-      <p className="mt-2 text-stone-600">O que já está publicado na vitrine.</p>
+      <h1 className="text-[40px] font-normal leading-none">Visão geral</h1>
+      <p className="mt-2 text-[var(--muted)]">O que já está publicado na vitrine.</p>
       <form
         className="mt-4 flex flex-wrap items-end gap-3 text-sm"
         onSubmit={(event) => {
@@ -60,7 +60,7 @@ export default function HomePage() {
           Até
           <input data-testid="analytics-to" type="date" className="mt-1 block rounded-xl border border-stone-300 px-3 py-2" value={to} onChange={(event) => setTo(event.target.value)} />
         </label>
-        <button data-testid="analytics-filter" className="rounded-full bg-stone-900 px-4 py-2 text-white" type="submit">
+        <button data-testid="analytics-filter" className="inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Filtrar
         </button>
       </form>
@@ -80,7 +80,7 @@ export default function HomePage() {
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <Ranked title="Produtos mais vistos" items={summary?.top_products} />
         <Ranked title="Categorias mais vistas" items={summary?.top_categories} />
-        <section className="rounded-2xl bg-white p-5 ring-1 ring-stone-200" data-testid="top-searches">
+        <section className="rounded-2xl bg-[var(--surface)] p-5" data-testid="top-searches">
           <h2 className="font-medium">Pesquisas</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {(summary?.top_searches ?? []).map((item) => (
@@ -98,7 +98,7 @@ export default function HomePage() {
 
 function Ranked({ title, items }: { title: string; items?: { name: string; views: number }[] }) {
   return (
-    <section className="rounded-2xl bg-white p-5 ring-1 ring-stone-200">
+    <section className="rounded-2xl bg-[var(--surface)] p-5">
       <h2 className="font-medium">{title}</h2>
       <ul className="mt-3 space-y-2 text-sm">
         {(items ?? []).map((item) => (
@@ -114,8 +114,8 @@ function Ranked({ title, items }: { title: string; items?: { name: string; views
 
 function Card({ label, value }: { label: string; value?: number }) {
   return (
-    <section className="rounded-2xl bg-white p-5 ring-1 ring-stone-200">
-      <p className="text-sm text-stone-500">{label}</p>
+    <section className="rounded-2xl bg-[var(--surface)] p-5">
+      <p className="text-sm text-[var(--muted)]">{label}</p>
       <p className="mt-2 text-3xl font-semibold">{value ?? "—"}</p>
     </section>
   );

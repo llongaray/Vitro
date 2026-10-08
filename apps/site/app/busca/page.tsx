@@ -18,17 +18,17 @@ export default async function SearchPage({ searchParams }: Props) {
   ]);
   if (!site || !catalog) return <main className="p-8">Loja não encontrada</main>;
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
-      <h1 className="font-serif text-5xl">Busca</h1>
-      <form action="/busca" className="mt-6 flex gap-3">
-        <input data-testid="search-input" name="q" defaultValue={q} className="rounded-full border border-stone-300 px-4 py-2" />
-        <button data-testid="search-submit" className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white">
+    <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-5 py-8 md:px-16 md:py-16">
+      <h1 className="font-serif text-5xl leading-none">Busca</h1>
+      <form action="/busca" className="flex flex-wrap items-center gap-4 rounded-2xl bg-[var(--surface)] p-4">
+        <input data-testid="search-input" name="q" defaultValue={q} placeholder="Buscar produtos…" className="min-w-40 flex-1 bg-transparent text-base outline-none placeholder:text-[var(--muted)]" />
+        <button data-testid="search-submit" className="text-sm text-[var(--brand)]">
           Buscar
         </button>
       </form>
-      <p className="mt-4 text-sm text-stone-500">{catalog.total} resultado(s)</p>
+      <p className="text-sm text-[var(--muted)]">{catalog.total} {catalog.total === 1 ? "produto encontrado" : "produtos encontrados"}</p>
       {q && catalog.total === 0 ? <EmptyCatalog title="Nenhum produto encontrado" text="Tente outro termo ou volte ao catálogo." /> : null}
-      <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {catalog.items.map((product) => (
           <ProductCardView key={product.slug} product={product} currency={site.tenant.currency} />
         ))}
