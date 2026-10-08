@@ -48,8 +48,8 @@ export default function ModulesPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-8">
-      <h1 className="font-serif text-4xl">Módulos</h1>
+    <main className="flex flex-col gap-4">
+      <h1 className="text-[40px] font-normal leading-none">Módulos</h1>
       <ul className="space-y-3">
         {modules.map((row) => (
           <li key={row.module} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 ring-1 ring-stone-200">
@@ -58,7 +58,7 @@ export default function ModulesPage() {
               type="button"
               data-testid={`module-${row.module}`}
               disabled={!row.platform_enabled && !row.enabled}
-              className="rounded-full bg-stone-900 px-3 py-1 text-sm text-white disabled:bg-stone-300"
+              className="inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)] disabled:opacity-50"
               onClick={() => toggleModule(row)}
             >
               {row.enabled ? "Ligado" : "Desligado"}
