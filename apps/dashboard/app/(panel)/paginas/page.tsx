@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Input } from "@vitrio/ui";
+import { Input, Notice } from "@vitrio/ui";
+import { PanelFeedback } from "@/components/panel-page";
 import { SeoPreview } from "@/components/seo-preview";
 import { api, readError } from "@/lib/api";
 
@@ -19,11 +20,21 @@ type PageItem = { id: string; title: string; slug: string; published: boolean };
 
 export default function PagesPage() {
   const [items, setItems] = useState<PageItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [saved, setSaved] = useState(false);
   const form = useForm({ resolver: zodResolver(schema), defaultValues: { title: "", content: "", kind: "custom" as const, published: true } });
 
   async function load() {
+    setLoading(true);
+    setLoadError("");
     const response = await api("/pages");
-    if (response.ok) setItems(await response.json());
+    setLoading(false);
+    if (!response.ok) {
+      setLoadError(await readError(response));
+      return;
+    }
+    setItems(await response.json());
   }
 
   useEffect(() => {
@@ -37,12 +48,14 @@ export default function PagesPage() {
       return;
     }
     form.reset();
+    setSaved(true);
     await load();
   }
 
   return (
     <main className="flex flex-col gap-4">
       <h1 className="text-[40px] font-normal leading-none">Páginas</h1>
+      <p className="text-base text-[var(--muted)]">Sobre, privacidade, termos e páginas da loja.</p>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <label>
           Título
@@ -66,10 +79,13 @@ export default function PagesPage() {
           <input type="checkbox" {...form.register("published")} /> Publicar
         </label>
         <SeoPreview autoTitle={form.watch("title")} autoDescription={form.watch("content")} />
+        {form.formState.errors.root ? <p className="text-sm text-red-700" role="alert">{form.formState.errors.root.message}</p> : null}
         <button className="w-fit inline-flex min-h-11 items-center rounded-[10px] bg-[var(--brand)] px-3.5 text-[15px] text-[var(--surface)]" type="submit">
           Salvar página
         </button>
       </form>
+      {saved ? <Notice tone="success" title="Página salva" /> : null}
+      <PanelFeedback loading={loading} error={loadError} onRetry={load} empty={!loading && items.length === 0} emptyTitle="Nenhuma página" emptyText="Publique o primeiro texto institucional." />
       <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item) => (
           <li key={item.id} className="px-4 py-3">
