@@ -1,0 +1,44 @@
+[project]
+name = "vitrio-api"
+version = "0.1.0"
+description = "API do Vitrio"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115.6",
+  "uvicorn[standard]>=0.34.0",
+  "sqlalchemy[asyncio]>=2.0.36",
+  "asyncpg>=0.30.0",
+  "alembic>=1.14.0",
+  "pydantic>=2.10.0",
+  "pydantic-settings>=2.7.0",
+  "email-validator>=2.2.0",
+  "pyjwt>=2.10.1",
+  "argon2-cffi>=23.1.0",
+  "pillow>=11.1.0",
+  "redis>=5.2.1",
+  "pyyaml>=6.0.2",
+  "httpx>=0.28.1",
+  "python-multipart>=0.0.20",
+  "dnspython>=2.7.0",
+  "cryptography>=44.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.4",
+  "pytest-asyncio>=0.25.0",
+  "fakeredis>=2.26.2",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["app/tests"]
