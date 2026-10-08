@@ -2,7 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 
-import { Input } from "@vitrio/ui";
+import { Input, Notice } from "@vitrio/ui";
+import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
 
 type Ad = { id: string; title: string; position: string; active: boolean };
@@ -10,11 +11,19 @@ type Ad = { id: string; title: string; position: string; active: boolean };
 export default function AdsPage() {
   const [items, setItems] = useState<Ad[]>([]);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   async function load() {
+    setLoading(true);
+    setLoadError("");
     const response = await api("/ads");
-    if (response.ok) setItems(await response.json());
-    else setMessage(await readError(response));
+    setLoading(false);
+    if (!response.ok) {
+      setLoadError(await readError(response));
+      return;
+    }
+    setItems(await response.json());
   }
 
   useEffect(() => {
@@ -42,6 +51,7 @@ export default function AdsPage() {
   return (
     <main className="flex flex-col gap-4">
       <h1 className="text-[40px] font-normal leading-none">Anúncios</h1>
+      <p className="text-base text-[var(--muted)]">Espaços pagos ou institucionais na vitrine.</p>
       <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         <Input data-testid="ad-title" name="title" placeholder="Título" required />
         <Input data-testid="ad-url" name="url" placeholder="https://" />
@@ -56,7 +66,8 @@ export default function AdsPage() {
           Publicar
         </button>
       </form>
-      {message ? <p className="text-sm">{message}</p> : null}
+      {message ? <Notice tone={message.startsWith("Anúncio") ? "success" : "error"} title={message} /> : null}
+      <PanelFeedback loading={loading} error={loadError} onRetry={load} empty={!loading && items.length === 0} emptyTitle="Nenhum anúncio" emptyText="Publique o primeiro anúncio da loja." />
       <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item) => (
           <li key={item.id} className="flex items-center justify-between px-4 py-3 text-sm">
