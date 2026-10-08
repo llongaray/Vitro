@@ -24,3 +24,11 @@ export function releaseSubmit(state: { busy: boolean }) {
 export function publishFlag(action: "draft" | "save", visibleInCatalog: boolean) {
   return action === "draft" ? false : visibleInCatalog;
 }
+
+export function canMutateProduct(productId: string | undefined, ready: boolean) {
+  return !productId || ready;
+}
+
+export function isCurrentRequest(generation: number, current: number) {
+  return generation === current;
+}
