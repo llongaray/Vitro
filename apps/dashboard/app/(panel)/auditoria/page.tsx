@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import { Notice } from "@vitrio/ui";
-import { PanelPage } from "@/components/panel-page";
-import { api } from "@/lib/api";
+import { PanelFeedback, PanelPage } from "@/components/panel-page";
+import { api, readError } from "@/lib/api";
 
 type Entry = {
   id: string;
@@ -16,19 +15,29 @@ type Entry = {
 
 export default function AuditPage() {
   const [items, setItems] = useState<Entry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  async function load() {
+    setLoading(true);
+    setLoadError("");
+    const response = await api("/audit");
+    setLoading(false);
+    if (!response.ok) {
+      setLoadError(await readError(response));
+      return;
+    }
+    const body = await response.json();
+    setItems(body.items);
+  }
 
   useEffect(() => {
-    api("/audit").then(async (response) => {
-      if (response.ok) {
-        const body = await response.json();
-        setItems(body.items);
-      }
-    });
+    void load();
   }, []);
 
   return (
     <PanelPage title="Auditoria" lede="O que mudou na loja e quando.">
-      {items.length === 0 ? <Notice tone="empty" title="Nenhum registro ainda" text="As alterações da loja aparecem nesta lista." /> : null}
+      <PanelFeedback loading={loading} error={loadError} onRetry={load} empty={!loading && items.length === 0} emptyTitle="Nenhum registro ainda" emptyText="As alterações da loja aparecem nesta lista." />
       <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item) => (
           <li key={item.id} className="flex items-center justify-between gap-4 text-sm">
