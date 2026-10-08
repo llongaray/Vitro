@@ -1,0 +1,105 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vitrio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vitrio}
+      POSTGRES_DB: ${POSTGRES_DB:-vitrio}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vitrio} -d ${POSTGRES_DB:-vitrio}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: ./apps/api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://vitrio:vitrio@postgres:5432/vitrio}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET no arquivo .env}
+      STORAGE_SECRET: ${STORAGE_SECRET:?Defina STORAGE_SECRET no arquivo .env}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?Defina REVALIDATE_SECRET no arquivo .env}
+      INTEGRATIONS_KEY: ${INTEGRATIONS_KEY:?Defina INTEGRATIONS_KEY no arquivo .env}
+      BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
+      STORAGE_PATH: /app/storage
+      VITRIO_CONFIG: /app/config/vitrio.yaml
+      SITE_INTERNAL_URL: http://site:3000
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      DEMO_OWNER_EMAIL: ${DEMO_OWNER_EMAIL:-owner@example.com}
+      DEMO_OWNER_PASSWORD: ${DEMO_OWNER_PASSWORD:-Vitrio.demo}
+      DEMO_OWNER_NAME: ${DEMO_OWNER_NAME:-Maria Demo}
+    volumes:
+      - storage:/app/storage
+      - ./config/vitrio.yaml:/app/config/vitrio.yaml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready')"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 25s
+
+  site:
+    build:
+      context: .
+      dockerfile: apps/site/Dockerfile
+      args:
+        REVALIDATE_SECRET: ${REVALIDATE_SECRET:?Defina REVALIDATE_SECRET no arquivo .env}
+    environment:
+      API_INTERNAL_URL: http://api:8000
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?Defina REVALIDATE_SECRET no arquivo .env}
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      api:
+        condition: service_healthy
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+    environment:
+      PORT: "3001"
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      api:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - storage:/var/www/media:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      site:
+        condition: service_started
+      dashboard:
+        condition: service_started
+
+volumes:
+  pgdata:
+  storage:
