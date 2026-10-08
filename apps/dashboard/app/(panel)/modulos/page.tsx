@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { Notice } from "@vitrio/ui";
+import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
 
 const moduleLabels: Record<string, string> = {
@@ -24,10 +26,20 @@ export default function ModulesPage() {
   const [modules, setModules] = useState<ModuleRow[]>([]);
   const [automations, setAutomations] = useState<AutomationRow[]>([]);
   const [message, setMessage] = useState("");
+  const [messageOk, setMessageOk] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   async function load() {
+    setLoading(true);
+    setLoadError("");
     const [moduleResponse, automationResponse] = await Promise.all([api("/modules"), api("/automations")]);
-    if (moduleResponse.ok) setModules(await moduleResponse.json());
+    setLoading(false);
+    if (!moduleResponse.ok) {
+      setLoadError(await readError(moduleResponse));
+      return;
+    }
+    setModules(await moduleResponse.json());
     if (automationResponse.ok) setAutomations(await automationResponse.json());
   }
 
@@ -37,12 +49,14 @@ export default function ModulesPage() {
 
   async function toggleModule(row: ModuleRow) {
     const response = await api(`/modules/${row.module}`, { method: "PUT", body: JSON.stringify({ enabled: !row.enabled }) });
+    setMessageOk(response.ok);
     setMessage(response.ok ? "Módulo atualizado." : await readError(response));
     await load();
   }
 
   async function toggleAutomation(row: AutomationRow) {
     const response = await api(`/automations/${row.trigger}`, { method: "PUT", body: JSON.stringify({ enabled: !row.enabled }) });
+    setMessageOk(response.ok);
     setMessage(response.ok ? "Automação atualizada." : await readError(response));
     await load();
   }
@@ -50,9 +64,11 @@ export default function ModulesPage() {
   return (
     <main className="flex flex-col gap-4">
       <h1 className="text-[40px] font-normal leading-none">Módulos</h1>
-      <ul className="space-y-3">
+      <p className="text-base text-[var(--muted)]">O que está ligado nesta loja e os avisos automáticos.</p>
+      <PanelFeedback loading={loading} error={loadError} onRetry={load} empty={!loading && modules.length === 0} emptyTitle="Nenhum módulo" emptyText="A plataforma ainda não liberou módulos para esta loja." />
+      <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {modules.map((row) => (
-          <li key={row.module} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 ring-1 ring-stone-200">
+          <li key={row.module} className="flex items-center justify-between gap-4">
             <span>{moduleLabels[row.module] ?? row.module}</span>
             <button
               type="button"
@@ -66,10 +82,10 @@ export default function ModulesPage() {
           </li>
         ))}
       </ul>
-      <h2 className="font-serif text-3xl">Automações</h2>
-      <ul className="space-y-3">
+      <h2 className="text-[22px]">Automações</h2>
+      <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {automations.map((row) => (
-          <li key={row.trigger} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 ring-1 ring-stone-200">
+          <li key={row.trigger} className="flex items-center justify-between gap-4">
             <span>{triggerLabels[row.trigger] ?? row.trigger}</span>
             <button type="button" className="rounded-full bg-stone-100 px-3 py-1 text-sm" onClick={() => toggleAutomation(row)}>
               {row.enabled ? "Ligada" : "Desligada"}
@@ -77,7 +93,7 @@ export default function ModulesPage() {
           </li>
         ))}
       </ul>
-      {message ? <p className="text-sm">{message}</p> : null}
+      {message ? <Notice tone={messageOk ? "success" : "error"} title={message} /> : null}
     </main>
   );
 }
