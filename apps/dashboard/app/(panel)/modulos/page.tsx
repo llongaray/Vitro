@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Notice } from "@vitrio/ui";
 import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 const moduleLabels: Record<string, string> = {
   coupons: "Cupons",
@@ -31,20 +32,17 @@ export default function ModulesPage() {
   const [loadError, setLoadError] = useState("");
 
   async function load() {
-    setLoading(true);
-    setLoadError("");
-    const [moduleResponse, automationResponse] = await Promise.all([api("/modules"), api("/automations")]);
-    setLoading(false);
-    if (!moduleResponse.ok) {
-      setLoadError(await readError(moduleResponse));
-      return;
-    }
-    setModules(await moduleResponse.json());
-    if (automationResponse.ok) setAutomations(await automationResponse.json());
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const [moduleResponse, automationResponse] = await Promise.all([api("/modules"), api("/automations")]);
+      if (!moduleResponse.ok) throw new Error(await readError(moduleResponse));
+      setModules(await moduleResponse.json());
+      if (!automationResponse.ok) throw new Error(await readError(automationResponse));
+      setAutomations(await automationResponse.json());
+    });
   }
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   async function toggleModule(row: ModuleRow) {
