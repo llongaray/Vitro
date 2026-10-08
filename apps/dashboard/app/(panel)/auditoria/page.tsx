@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { Notice } from "@vitrio/ui";
+import { PanelPage } from "@/components/panel-page";
 import { api } from "@/lib/api";
 
 type Entry = {
@@ -25,18 +27,18 @@ export default function AuditPage() {
   }, []);
 
   return (
-    <main className="mx-auto max-w-3xl">
-      <h1 className="font-serif text-4xl">Auditoria</h1>
-      <ul className="mt-6 divide-y divide-stone-200 rounded-2xl bg-white ring-1 ring-stone-200">
+    <PanelPage title="Auditoria" lede="O que mudou na loja e quando.">
+      {items.length === 0 ? <Notice tone="empty" title="Nenhum registro ainda" text="As alterações da loja aparecem nesta lista." /> : null}
+      <ul className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
         {items.map((item) => (
-          <li key={item.id} className="flex items-center justify-between px-4 py-3 text-sm">
+          <li key={item.id} className="flex items-center justify-between gap-4 text-sm">
             <span>
               {item.action} · {item.entity_type}
             </span>
-            <time className="text-stone-500">{new Date(item.created_at).toLocaleString("pt-BR")}</time>
+            <time className="text-[var(--muted)]">{new Date(item.created_at).toLocaleString("pt-BR")}</time>
           </li>
         ))}
       </ul>
-    </main>
+    </PanelPage>
   );
 }
