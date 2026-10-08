@@ -42,11 +42,11 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main data-testid="dashboard-home">
+    <main className="flex flex-col gap-4" data-testid="dashboard-home">
       <h1 className="text-[40px] font-normal leading-none">Visão geral</h1>
-      <p className="mt-2 text-[var(--muted)]">O que já está publicado na vitrine.</p>
+      <p className="text-base text-[var(--muted)]">Acompanhe o que está publicado e o interesse na vitrine.</p>
       <form
-        className="mt-4 flex flex-wrap items-end gap-3 text-sm"
+        className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6"
         onSubmit={(event) => {
           event.preventDefault();
           loadSummary(from, to);
