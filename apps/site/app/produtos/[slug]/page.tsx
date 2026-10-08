@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ContactLink } from "@/components/contact-link";
+import { StorePage } from "@/components/store-page";
 import { AdSlots } from "@/components/ad-slots";
 import { Gallery } from "@/components/gallery";
 import { JsonLd } from "@/components/json-ld";
@@ -29,29 +30,27 @@ export default async function ProductPage({ params }: Props) {
   const shown = product.promotional_price ?? product.price;
   const sidebar = site.ads?.some((ad) => ad.position === "SIDEBAR");
   return (
-    <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-5 py-8 md:px-16 md:py-16">
+    <StorePage crumb={product.name} title={product.name} titleTestId="product-title" lede="O pedido segue direto com a loja.">
       <AdSlots ads={site.ads} position="PRODUCT_PAGE" />
-      <div className={`grid gap-10 ${sidebar ? "lg:grid-cols-[1fr_240px]" : ""}`}>
-        <div className="grid gap-10 md:grid-cols-2">
-          {product.json_ld ? <JsonLd data={product.json_ld} /> : null}
+      {product.json_ld ? <JsonLd data={product.json_ld} /> : null}
+      <div className={`grid items-start gap-4 ${sidebar ? "xl:grid-cols-[1fr_240px]" : ""}`}>
+        <div className="grid items-start gap-4 lg:grid-cols-2">
           <Gallery images={product.images.length ? product.images : product.image ? [product.image] : []} name={product.name} />
-          <div>
+          <section className="flex flex-col gap-4 rounded-2xl bg-[var(--surface)] p-6">
             {product.category_slug ? (
-              <Link href={`/categorias/${product.category_slug}`} className="text-sm text-stone-500">
+              <Link href={`/categorias/${product.category_slug}`} className="text-[10px] uppercase tracking-wide text-[var(--brand)]">
                 {product.category_name}
               </Link>
             ) : null}
-            <h1 className="mt-2 font-serif text-5xl leading-none" data-testid="product-title">
-              {product.name}
-            </h1>
-            {product.brand ? <p className="mt-2 text-sm uppercase tracking-wide text-stone-500">{product.brand}</p> : null}
-            <p className="mt-4 text-lg">{product.price_visible && shown != null ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: site.tenant.currency }).format(shown) : "Preço sob consulta"}</p>
-            {product.stock_display ? <p className="mt-2 text-sm text-stone-500">{product.stock_display}</p> : null}
-            {product.description ? <div className="mt-6 whitespace-pre-wrap text-stone-700">{product.description}</div> : null}
-            <div className="mt-8">
-              <ContactLink contact={site.tenant.contact} message={productMessage(site.tenant.contact.template, product.name, url)} />
-            </div>
-          </div>
+            {product.brand ? <p className="text-[10px] uppercase tracking-wide text-[var(--brand)]">{product.brand}</p> : null}
+            <h2 className="text-lg">{product.name}</h2>
+            <p className="text-[28px]">
+              {product.price_visible && shown != null ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: site.tenant.currency }).format(shown) : "Preço sob consulta"}
+            </p>
+            {product.stock_display ? <p className="text-sm text-[var(--muted)]">{product.stock_display}</p> : null}
+            {product.description ? <div className="whitespace-pre-wrap text-[var(--muted)]">{product.description}</div> : null}
+            <ContactLink contact={site.tenant.contact} message={productMessage(site.tenant.contact.template, product.name, url)} />
+          </section>
         </div>
         {sidebar ? (
           <aside>
@@ -59,6 +58,6 @@ export default async function ProductPage({ params }: Props) {
           </aside>
         ) : null}
       </div>
-    </main>
+    </StorePage>
   );
 }
