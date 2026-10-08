@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Input, Notice } from "@vitrio/ui";
 import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 type Product = { id: string; name: string };
 type Promotion = { id: string; name: string; active: boolean; products: { name: string }[] };
@@ -18,23 +19,19 @@ export default function PromotionsPage() {
   const [loadError, setLoadError] = useState("");
 
   async function load() {
-    setLoading(true);
-    setLoadError("");
-    const [productResponse, promotionResponse] = await Promise.all([api("/products?limit=100"), api("/promotions")]);
-    setLoading(false);
-    if (!promotionResponse.ok) {
-      setLoadError(await readError(promotionResponse));
-      return;
-    }
-    if (productResponse.ok) {
-      const body = await productResponse.json();
-      setProducts(body.items);
-    }
-    setItems(await promotionResponse.json());
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const [productResponse, promotionResponse] = await Promise.all([api("/products?limit=100"), api("/promotions")]);
+      if (!promotionResponse.ok) throw new Error(await readError(promotionResponse));
+      if (productResponse.ok) {
+        const body = await productResponse.json();
+        setProducts(body.items ?? []);
+      }
+      setItems(await promotionResponse.json());
+    });
   }
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
