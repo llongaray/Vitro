@@ -5,6 +5,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Input, Notice } from "@vitrio/ui";
 import { PanelFeedback } from "@/components/panel-page";
 import { api, readError } from "@/lib/api";
+import { runPanelLoad } from "@/lib/panel-guards";
 
 type Ad = { id: string; title: string; position: string; active: boolean };
 
@@ -15,15 +16,11 @@ export default function AdsPage() {
   const [loadError, setLoadError] = useState("");
 
   async function load() {
-    setLoading(true);
-    setLoadError("");
-    const response = await api("/ads");
-    setLoading(false);
-    if (!response.ok) {
-      setLoadError(await readError(response));
-      return;
-    }
-    setItems(await response.json());
+    await runPanelLoad(setLoading, setLoadError, async () => {
+      const response = await api("/ads");
+      if (!response.ok) throw new Error(await readError(response));
+      setItems(await response.json());
+    });
   }
 
   useEffect(() => {
